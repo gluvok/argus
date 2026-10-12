@@ -1,24 +1,25 @@
-# Fast-ALPR Primary Engine & 4-Tier Fallback Integration Guide for Argus
+# Fast-ALPR Vehicle-First Engine & 5-Tier Fallback Integration Guide for Argus
 
-This technical specification and implementation guide is designed to be provided directly to an AI coding assistant (or software engineer) to integrate **Fast-ALPR** as the **primary ANPR engine** with a **4-tier cascaded fallback architecture** into Argus, while slimming down the API response to a **thin schema** and **removing human occupancy counting**.
+This technical specification and implementation guide documents the integration of **Fast-ALPR** and **RapidOCR** with a **5-tier vehicle-first cascaded fallback architecture** into Argus, with proximity sorting and `vehicle_box` tracking.
 
 ---
 
 ## 1. Requirements & Core Objectives
 
-1. **4-Tier Cascaded Execution Hierarchy**:
-   - **Tier 1 (Fast-ALPR Full-Frame)**: Run Fast-ALPR directly on the input image (YOLOv9-s plate detector + CCT-XS OCR with margin expansion). Candidates are ordered by confidence descending, then validated and normalized against Indian MoRTH rules via `parse_plate_info()`. If valid plates are detected, return immediately (~30–40 ms).
-   - **Tier 2 (Fast-ALPR on Vehicle Crops)**: If Tier 1 yields no valid plates, run YOLO26 vehicle detection to isolate vehicle crop(s). Execute Fast-ALPR plate detection + CCT-XS OCR on each vehicle crop, followed by `parse_plate_info()`. If valid plates are detected, return immediately (~50–70 ms).
-   - **Tier 3 (Argus RapidOCR on Vehicle Crops)**: If Tier 2 yields no valid plates, execute Argus's RapidOCR pipeline on the cropped vehicle boxes (2D spatial candidate pairing, unsharp/black-hat enhancement, and regex validation). If valid plates are detected, return immediately (~120–180 ms).
-   - **Tier 4 (Argus RapidOCR Full-Frame Fallback)**: If Tier 3 yields no valid plates (or if no vehicles were detected by YOLO26), run Argus's RapidOCR engine on the entire full frame. If valid plates are found, return them. If still empty, return an empty results array (~220–280 ms).
+1. **5-Tier Cascaded Execution Hierarchy**:
+   - **Stage 1 (Vehicle Detection)**: Detect vehicles using YOLO26 and sort in closest-first proximity order (largest bounding box area).
+   - **Tier 1 (Crop Fast-ALPR)**: Run Fast-ALPR (YOLOv9-s plate detector + CCT-XS OCR with margin expansion) on vehicle crop(s) closest-first. Emits recognized plates with `vehicle_box`.
+   - **Tier 2 (Full-Frame Fast-ALPR Fallback)**: If crop Fast-ALPR yields no plates, or if zero vehicles were detected (e.g. non-COCO vehicles like tractors), execute Fast-ALPR directly on the full frame (`vehicle_box=None`).
+   - **Tier 3 (Crop RapidOCR Fallback)**: If full-frame Fast-ALPR yields no plates, execute RapidOCR on vehicle crops with CLAHE and black-hat contrast enhancement for dirty/worn plates missed by Fast-ALPR. Emits with `vehicle_box`.
+   - **Tier 4 (Full-Frame RapidOCR Fallback)**: If crop RapidOCR yields no plates (or if zero vehicles were detected), execute full-frame RapidOCR (`vehicle_box=None`).
+   - **Tier 5 (Clean Empty Output & Strict Plate-Only)**: If all tiers fail to detect a plate, return `results: []`. Unplated vehicles are omitted entirely.
 2. **Indian Plate Validation & Normalization**:
    - All recognized plates across every tier are passed through Argus's `parse_plate_info()` to:
      - Strip HSRP hologram prefixes (`IND`, `1ND`, etc.).
      - Normalize state code typos (`RT -> RJ`, `W8 -> WB`, etc.).
      - Validate against MoRTH standard regex and Bharat Series (`BH`) format.
-3. **Thin API Response**:
-   - Eliminate heavy metadata: remove `plates`, `vehicle_type`, `state`, `raw_text`, `confidence`, `box`, and `filename`.
-   - The response contains only `results` (with `plate`), and `execution_time_ms`.
+3. **Response Schema**:
+   - The response contains `results` (with `plate`, `vehicle_box`, and `execution_time_ms`), and total `execution_time_ms`.
 4. **Remove Human Tracking**:
    - Remove `humans_inside` and `humans_outside` from schemas, detectors, and pipelines.
 5. **NASA JPL Rule 4 Invariant**:

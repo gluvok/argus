@@ -58,15 +58,18 @@ flowchart TD
    - Validates MIME type and image structure via lightweight header probing (`probe_image`) before decoding pixels.
    - Normalizes EXIF orientation and decodes the image at full camera resolution without downscaling (camera is 1080p, preserving character fidelity for weighbridge accuracy).
 
-2. **Stage 1: Vehicle Detection & Human Partitioning** ([`app/services/detector/`](../app/services/detector/)):
-   - Runs Ultralytics YOLO26 inference via ONNX Runtime CPU (`yolo26n.onnx`, falling back to `yolo26n.pt`) to identify `car`, `bus`, `truck`, `motorcycle`, `bicycle`, and `person`.
-   - Human detections geometrically contained inside vehicle bounding boxes are classified as `humans_inside` (cabin occupants), while external pedestrians are counted as `humans_outside`.
-   - Extracts padded bounding box crops and labels for all qualified vehicles meeting confidence and area thresholds.
+2. **Stage 1: Vehicle Detection & Proximity Sorting** ([`app/services/detector/`](../app/services/detector/)):
+   - Runs Ultralytics YOLO26 inference via ONNX Runtime CPU (`yolo26n.onnx`, falling back to `yolo26n.pt`) to identify `car`, `bus`, `truck`, `motorcycle`, and `bicycle`.
+   - Extracts padded bounding box coordinates and crops for all qualified vehicles meeting confidence and area thresholds.
+   - Multiple detected vehicles are sorted in proximity order (closest-first, ranked by largest bounding box area).
 
-3. **Stage 2: Optical Character Recognition (OCR) Engine & Lazy Enhancement** ([`app/services/ocr/`](../app/services/ocr/)):
-   - **Pass A (Crop OCR, Closest-First & Configurable Multi-Vehicle)**: Runs RapidOCR (ONNX Runtime) over vehicle crops with coordinates translated back to global full-frame space. Governed by `ENABLE_MULTI_VEHICLE_OCR` (default: `false`): evaluates the closest vehicle first (largest bounding box area) and exits immediately upon finding a valid plate; if unreadable, it falls through to the next closest vehicle. When set to `true`, scans all detected vehicle crops.
-   - **Pass B (Full-Frame OCR, Configurable & Dynamic Fallback)**: Governed by `ENABLE_FULL_FRAME_OCR` (default: `false`). When `true`, scans the full original image to capture foreground or unlocalized plates and spatially associates them to vehicles. When `false`, full-frame OCR is skipped if any vehicle crop yields a recognized plate, but automatically triggers as a fallback if all vehicle crops lack recognized plates.
-   - **Zero-Vehicle Fallback**: When YOLO detects no vehicles (e.g. bumper close-up, partial vehicle frame), full-frame OCR fallback runs directly via [`fallback.py`](../app/services/pipeline/fallback.py), returning valid non-overlapping plates with `vehicle_type=None`.
+3. **Stage 2: 5-Tier Cascaded ANPR & Lazy Enhancement** ([`app/services/pipeline/`](../app/services/pipeline/) & [`app/services/ocr/`](../app/services/ocr/)):
+   - **Tier 1 (Crop Fast-ALPR, Closest-First)**: Runs Fast-ALPR (YOLOv9-s + CCT-XS) over vehicle crops in closest-first proximity order. Governed by `ENABLE_MULTI_VEHICLE_OCR` (default: `false`): early exits upon the closest vehicle with a valid plate; when set to `true`, scans all detected vehicle crops. Emits recognized plates with `vehicle_box`.
+   - **Tier 2 (Full-Frame Fast-ALPR Fallback)**: If crop Fast-ALPR yields no plates, or if zero vehicles were detected (e.g. non-COCO vehicles like tractors or excavators), executes Fast-ALPR directly on the full frame, capturing plates with `vehicle_box=None`.
+   - **Tier 3 (Crop RapidOCR Fallback)**: If full-frame Fast-ALPR yields no plates, executes RapidOCR on vehicle crops with lazy CLAHE and morphological black-hat contrast enhancement for dirty or worn plates missed by Fast-ALPR. Emits recognized plates with `vehicle_box`.
+   - **Tier 4 (Full-Frame RapidOCR Fallback)**: If crop RapidOCR yields no plates (or if zero vehicles were detected), executes full-frame RapidOCR as the final OCR safety net (`vehicle_box=None`).
+   - **Tier 5 (Clean Empty Output & Strict Plate-Only)**: If all tiers fail to detect a plate, returns an empty array `results: []`. Unplated vehicles are omitted entirely (e.g. if $v_1$ has no plate but $v_2$ and $v_3$ do, only $2$ results are emitted).
+   - **Dual-Pass Full-Frame Pass**: When `ENABLE_FULL_FRAME_OCR=true`, full-frame OCR additionally executes to discover unlocalized or foreground plates, merging deduplicated plates into `results`.
    - **Lazy Two-Pass Contrast Enhancement**: Initial extraction runs on the raw RGB raster. If and only if no valid plate candidates are recognized, [`enhancer.py`](../app/services/ocr/enhancer.py) executes:
      1. *Bicubic Upscaling*: If $\min(w, h) < 300$, scales up to $2.0\times$ (clamped by $640 / \max(w, h, 1)$).
      2. *CLAHE*: Contrast Limited Adaptive Histogram Equalization (`clipLimit=2.5, tileGridSize=(8, 8)`).

@@ -1,11 +1,11 @@
-"""Tests for the 4-tier cascaded Fast-ALPR and RapidOCR ANPR fallback pipeline."""
+"""Tests for the 5-tier cascaded vehicle-first ANPR fallback pipeline."""
 
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 from PIL import Image
 
-from app.schemas import DetectedVehicle, DetectionResult
+from app.schemas import DetectedVehicle, DetectionResult, PlateResult
 from app.services.ocr.fast_alpr_padding import compute_padded_crop
 from app.services.pipeline.orchestrator import recognize_plate_image
 
@@ -15,92 +15,164 @@ def test_fast_alpr_padding_expansion():
     dummy_img = np.zeros((100, 100, 3), dtype=np.uint8)
     bbox = MagicMock(x1=20, y1=20, x2=60, y2=40)
     crop = compute_padded_crop(dummy_img, bbox, pad_x_pct=0.15, pad_y_pct=0.10)
-    # Box width 40 -> pad_x = max(10, 6) = 10 -> x1=10, x2=70 (width=60)
-    # Box height 20 -> pad_y = max(5, 2) = 5 -> y1=15, y2=45 (height=30)
     assert crop.shape[0] == 30
     assert crop.shape[1] == 60
 
 
 @patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_cascade_tier1_fast_alpr_full_frame_early_exit(mock_yolo, mock_fast_full, sample_image_bytes):
-    """Tier 1: When Fast-ALPR finds plate on full frame, vehicle detection is skipped."""
-    mock_fast_full.return_value = ["RJ09GA0165"]
+def test_cascade_tier1_crop_fast_alpr_early_exit(
+    mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes
+):
+    """Tier 1: Vehicle detected and crop Fast-ALPR finds plate; full-frame is skipped."""
+    mock_yolo.return_value = DetectionResult(
+        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
+    )
+    mock_fast_crop.return_value = [PlateResult(plate="RJ09GA0165", vehicle_box=(10, 10, 50, 50))]
 
     resp = recognize_plate_image(sample_image_bytes, filename="clear_plate.jpg")
 
-    assert mock_fast_full.call_count == 1
-    assert mock_yolo.call_count == 0
+    assert mock_yolo.call_count == 1
+    assert mock_fast_crop.call_count == 1
+    assert mock_fast_ff.call_count == 0
     assert len(resp.results) == 1
     assert resp.results[0].plate == "RJ09GA0165"
+    assert resp.results[0].vehicle_box == (10, 10, 50, 50)
     assert resp.results[0].execution_time_ms > 0
-    assert resp.execution_time_ms > 0
 
 
-@patch("app.services.pipeline.orchestrator._run_rapidocr_fallback")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_on_crops")
+from app.core.config import settings
+
+
+@patch("app.services.ocr.fast_alpr_runner.run_fast_alpr")
 @patch("app.services.pipeline.VehicleDetector.detect")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-def test_cascade_tier2_fast_alpr_crop_early_exit(
-    mock_fast_full, mock_yolo, mock_fast_crop, mock_rapid, sample_image_bytes
+def test_cascade_tier1_multi_vehicle_closest_order_strict_plates(
+    mock_yolo, mock_run_fast_alpr, sample_image_bytes
 ):
-    """Tier 2: When Tier 1 is empty, Fast-ALPR on vehicle crop succeeds and RapidOCR is skipped."""
-    mock_fast_full.return_value = []
-    dummy_crop = Image.new("RGB", (60, 60))
+    """Tier 1: 3 vehicles (v1 unplated, v2 plated, v3 plated) returns exactly 2 results."""
+    dummy_crop = Image.new("RGB", (40, 40))
+    # v1: 100x100 (area 10000 - closest), v2: 80x80 (area 6400), v3: 50x50 (area 2500)
+    v1 = DetectedVehicle(vehicle_type="car", box=(0, 0, 100, 100), crop=dummy_crop)
+    v2 = DetectedVehicle(vehicle_type="truck", box=(0, 0, 80, 80), crop=dummy_crop)
+    v3 = DetectedVehicle(vehicle_type="bus", box=(0, 0, 50, 50), crop=dummy_crop)
+    mock_yolo.return_value = DetectionResult(vehicles=[v3, v1, v2])
+
+    # Side effect for v1 (closest), v2 (second closest), v3 (third closest)
+    mock_run_fast_alpr.side_effect = [
+        [],  # v1 crop: unplated
+        ["DL01AB1234"],  # v2 crop: plated
+        ["HR26CD5678"],  # v3 crop: plated
+    ]
+
+    with patch.object(settings, "ENABLE_MULTI_VEHICLE_OCR", True):
+        resp = recognize_plate_image(sample_image_bytes, filename="three_vehicles.jpg")
+
+    assert len(resp.results) == 2
+    assert resp.results[0].plate == "DL01AB1234"
+    assert resp.results[0].vehicle_box == (0, 0, 80, 80)
+    assert resp.results[1].plate == "HR26CD5678"
+    assert resp.results[1].vehicle_box == (0, 0, 50, 50)
+
+
+@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.pipeline.VehicleDetector.detect")
+def test_cascade_tier2_crop_miss_full_frame_fast_alpr(
+    mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes
+):
+    """Tier 2: Crop Fast-ALPR misses, full-frame Fast-ALPR succeeds."""
     mock_yolo.return_value = DetectionResult(
-        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=dummy_crop)]
+        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
     )
-    mock_fast_crop.return_value = ["MH12AB1234"]
+    mock_fast_crop.return_value = []
+    mock_fast_ff.return_value = [PlateResult(plate="MH12AB1234", vehicle_box=None)]
 
     resp = recognize_plate_image(sample_image_bytes, filename="distant_vehicle.jpg")
 
-    assert mock_fast_full.call_count == 1
-    assert mock_yolo.call_count == 1
     assert mock_fast_crop.call_count == 1
-    assert mock_rapid.call_count == 0
+    assert mock_fast_ff.call_count == 1
     assert len(resp.results) == 1
     assert resp.results[0].plate == "MH12AB1234"
-    assert resp.results[0].execution_time_ms > 0
+    assert resp.results[0].vehicle_box is None
 
 
-@patch("app.services.pipeline.orchestrator._run_rapidocr_fallback")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_on_crops")
-@patch("app.services.pipeline.VehicleDetector.detect")
 @patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-def test_cascade_tier3_rapidocr_fallback(
-    mock_fast_full, mock_yolo, mock_fast_crop, mock_rapid, sample_image_bytes
+@patch("app.services.pipeline.VehicleDetector.detect")
+def test_cascade_tier2_tractor_zero_vehicle_fast_alpr(
+    mock_yolo, mock_fast_ff, sample_image_bytes
 ):
-    """Tier 3/4: When Fast-ALPR yields no plates, RapidOCR fallback is executed."""
-    mock_fast_full.return_value = []
-    dummy_crop = Image.new("RGB", (60, 60))
+    """Tier 2: Zero vehicles detected (tractor/non-COCO) falls back to full-frame Fast-ALPR."""
+    mock_yolo.return_value = DetectionResult(vehicles=[])
+    mock_fast_ff.return_value = [PlateResult(plate="PB08EE1234", vehicle_box=None)]
+
+    resp = recognize_plate_image(sample_image_bytes, filename="tractor.jpg")
+
+    assert mock_fast_ff.call_count == 1
+    assert len(resp.results) == 1
+    assert resp.results[0].plate == "PB08EE1234"
+    assert resp.results[0].vehicle_box is None
+
+
+@patch("app.services.pipeline.orchestrator._run_rapidocr_fullframe")
+@patch("app.services.pipeline.orchestrator._scan_rapidocr_crops")
+@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.pipeline.VehicleDetector.detect")
+def test_cascade_tier3_crop_rapidocr_fallback(
+    mock_yolo, mock_fast_crop, mock_fast_ff, mock_rapid_crop, mock_rapid_ff, sample_image_bytes
+):
+    """Tier 3: Fast-ALPR fails on crop and full frame; crop RapidOCR succeeds with vehicle_box."""
     mock_yolo.return_value = DetectionResult(
-        vehicles=[DetectedVehicle(vehicle_type="truck", box=(10, 10, 50, 50), crop=dummy_crop)]
+        vehicles=[DetectedVehicle(vehicle_type="truck", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
     )
     mock_fast_crop.return_value = []
-    mock_rapid.return_value = ["DL01AB1234"]
+    mock_fast_ff.return_value = []
+    mock_rapid_crop.return_value = [PlateResult(plate="UP14AB9999", vehicle_box=(10, 10, 50, 50))]
 
-    resp = recognize_plate_image(sample_image_bytes, filename="difficult_plate.jpg")
+    resp = recognize_plate_image(sample_image_bytes, filename="dirty_plate.jpg")
 
-    assert mock_fast_full.call_count == 1
     assert mock_fast_crop.call_count == 1
-    assert mock_rapid.call_count == 1
+    assert mock_fast_ff.call_count == 1
+    assert mock_rapid_crop.call_count == 1
+    assert mock_rapid_ff.call_count == 0
     assert len(resp.results) == 1
-    assert resp.results[0].plate == "DL01AB1234"
-    assert resp.results[0].execution_time_ms > 0
+    assert resp.results[0].plate == "UP14AB9999"
+    assert resp.results[0].vehicle_box == (10, 10, 50, 50)
 
 
-@patch("app.services.pipeline.orchestrator._run_rapidocr_fallback")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_on_crops")
-@patch("app.services.pipeline.VehicleDetector.detect")
+@patch("app.services.pipeline.orchestrator._run_rapidocr_fullframe")
+@patch("app.services.pipeline.orchestrator._scan_rapidocr_crops")
 @patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-def test_cascade_all_tiers_empty_returns_clean_response(
-    mock_fast_full, mock_yolo, mock_fast_crop, mock_rapid, sample_image_bytes
+@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.pipeline.VehicleDetector.detect")
+def test_cascade_tier4_full_frame_rapidocr_fallback(
+    mock_yolo, mock_fast_crop, mock_fast_ff, mock_rapid_crop, mock_rapid_ff, sample_image_bytes
 ):
-    """When all 4 tiers produce no valid plates, thin response has results=[]."""
-    mock_fast_full.return_value = []
+    """Tier 4: All crop passes and full-frame Fast-ALPR fail; full-frame RapidOCR succeeds."""
     mock_yolo.return_value = DetectionResult(vehicles=[])
-    mock_fast_crop.return_value = []
-    mock_rapid.return_value = []
+    mock_fast_ff.return_value = []
+    mock_rapid_ff.return_value = [PlateResult(plate="DL01XY9999", vehicle_box=None)]
+
+    resp = recognize_plate_image(sample_image_bytes, filename="full_fallback.jpg")
+
+    assert mock_fast_ff.call_count == 1
+    assert mock_rapid_ff.call_count == 1
+    assert len(resp.results) == 1
+    assert resp.results[0].plate == "DL01XY9999"
+    assert resp.results[0].vehicle_box is None
+
+
+@patch("app.services.pipeline.orchestrator._run_rapidocr_fullframe")
+@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.pipeline.VehicleDetector.detect")
+def test_cascade_all_tiers_empty_returns_clean_response(
+    mock_yolo, mock_fast_ff, mock_rapid_ff, sample_image_bytes
+):
+    """When all tiers produce no valid plates, thin response has results=[]."""
+    mock_yolo.return_value = DetectionResult(vehicles=[])
+    mock_fast_ff.return_value = []
+    mock_rapid_ff.return_value = []
 
     resp = recognize_plate_image(sample_image_bytes, filename="empty_road.jpg")
 

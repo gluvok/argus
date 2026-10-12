@@ -40,6 +40,7 @@ class DetectionResult:
 
 class PlateResult(BaseModel):
     plate: str = Field(description="Normalized Indian vehicle registration number")
+    vehicle_box: tuple[int, int, int, int] | None = Field(default=None, description="Vehicle box coordinates")
     execution_time_ms: float = Field(default=0.0, description="Processing duration in milliseconds")
 
 

@@ -6,6 +6,7 @@ from typing import Any
 import cv2
 import numpy as np
 
+from app.schemas import PlateResult
 from app.services.image_processing import ImageInput, load_rgb
 from app.services.ocr.fast_alpr_engine import get_fast_alpr_engine
 from app.services.ocr.fast_alpr_padding import compute_padded_crop
@@ -40,19 +41,17 @@ def run_fast_alpr(img_bgr: np.ndarray) -> list[str]:
     return valid_plates
 
 
-def run_fast_alpr_pipeline(image_input: ImageInput) -> list[str]:
-    """Tier 1: Run Fast-ALPR directly on full input image."""
+def run_fast_alpr_pipeline(image_input: ImageInput) -> list[PlateResult]:
+    """Run Fast-ALPR directly on full input image (vehicle_box=None)."""
     pil_img = load_rgb(image_input)
     img_bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-    return run_fast_alpr(img_bgr)
+    return [PlateResult(plate=p, vehicle_box=None) for p in run_fast_alpr(img_bgr)]
 
 
-def run_fast_alpr_on_crops(vehicles: list[Any]) -> list[str]:
-    """Tier 2: Run Fast-ALPR on cropped vehicle boxes."""
-    for v in vehicles:
-        if v.crop is None:
-            continue
-        crop_bgr = cv2.cvtColor(np.array(v.crop), cv2.COLOR_RGB2BGR)
-        if plates := run_fast_alpr(crop_bgr):
-            return plates
-    return []
+def run_fast_alpr_on_vehicle(vehicle: Any) -> list[PlateResult]:
+    """Run Fast-ALPR on a single vehicle crop, returning PlateResult with vehicle_box."""
+    if getattr(vehicle, "crop", None) is None:
+        return []
+    crop_bgr = cv2.cvtColor(np.array(vehicle.crop), cv2.COLOR_RGB2BGR)
+    return [PlateResult(plate=p, vehicle_box=vehicle.box) for p in run_fast_alpr(crop_bgr)]
+
