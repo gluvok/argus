@@ -1,4 +1,4 @@
-"""Zero-vehicle and tier fallback routines for full-frame RapidOCR."""
+"""Full-frame fallback routine for RapidOCR."""
 
 from typing import Any
 
@@ -22,10 +22,3 @@ def run_full_frame_fallback(
     except (ANPRServiceError, ValueError, RuntimeError, OSError, KeyError, AttributeError) as exc:
         logger.error(f"Full-frame OCR failed on '{filename}': {exc}")
         return []
-
-
-def _run_rapidocr_fullframe(image_input: ImageInput, filename: str) -> list[PlateResult]:
-    """Tier 4: Execute full-frame RapidOCR fallback using default recognizer."""
-    from app.services.ocr.strategies import RapidOCREngine
-
-    return RapidOCREngine().scan_full_frame(image_input, filename)

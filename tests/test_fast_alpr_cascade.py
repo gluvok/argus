@@ -19,8 +19,8 @@ def test_fast_alpr_padding_expansion():
     assert crop.shape[1] == 60
 
 
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier1_crop_fast_alpr_early_exit(
     mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes
@@ -75,8 +75,8 @@ def test_cascade_tier1_multi_vehicle_closest_order_strict_plates(
     assert resp.results[1].vehicle_box == (0, 0, 50, 50)
 
 
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier2_crop_miss_full_frame_fast_alpr(
     mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes
@@ -97,7 +97,7 @@ def test_cascade_tier2_crop_miss_full_frame_fast_alpr(
     assert resp.results[0].vehicle_box is None
 
 
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier2_tractor_zero_vehicle_fast_alpr(
     mock_yolo, mock_fast_ff, sample_image_bytes
@@ -114,10 +114,10 @@ def test_cascade_tier2_tractor_zero_vehicle_fast_alpr(
     assert resp.results[0].vehicle_box is None
 
 
-@patch("app.services.pipeline.orchestrator._run_rapidocr_fullframe")
-@patch("app.services.pipeline.orchestrator._scan_rapidocr_crops")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.ocr.strategies.RapidOCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.RapidOCREngine.scan_crops")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier3_crop_rapidocr_fallback(
     mock_yolo, mock_fast_crop, mock_fast_ff, mock_rapid_crop, mock_rapid_ff, sample_image_bytes
@@ -141,10 +141,10 @@ def test_cascade_tier3_crop_rapidocr_fallback(
     assert resp.results[0].vehicle_box == (10, 10, 50, 50)
 
 
-@patch("app.services.pipeline.orchestrator._run_rapidocr_fullframe")
-@patch("app.services.pipeline.orchestrator._scan_rapidocr_crops")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.ocr.strategies.RapidOCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.RapidOCREngine.scan_crops")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier4_full_frame_rapidocr_fallback(
     mock_yolo, mock_fast_crop, mock_fast_ff, mock_rapid_crop, mock_rapid_ff, sample_image_bytes
@@ -163,8 +163,8 @@ def test_cascade_tier4_full_frame_rapidocr_fallback(
     assert resp.results[0].vehicle_box is None
 
 
-@patch("app.services.pipeline.orchestrator._run_rapidocr_fullframe")
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.ocr.strategies.RapidOCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_all_tiers_empty_returns_clean_response(
     mock_yolo, mock_fast_ff, mock_rapid_ff, sample_image_bytes
@@ -204,8 +204,8 @@ def test_plate_resolver_filters_decals_and_phones():
     assert resolve_plate_from_text("PASSING") is None
 
 
-@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
-@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
+@patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_stage_logging(mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes):
     """Verify that stage and tier logging are emitted with [pipeline] prefix."""

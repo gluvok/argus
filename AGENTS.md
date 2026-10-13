@@ -96,6 +96,7 @@ For any Python modifications:
 
 - Do not compromise production code types or signatures to satisfy stale test mocks or old conventions.
 - If a function returns a typed dataclass/model, never add `isinstance(x, dict)` checks, dict subscription shims (`__getitem__`, `get`), or fallback adapters.
+- When modernizing procedural code to OOP patterns (e.g. Strategy, Specification) or decomposing into subpackages, **never retain legacy procedural wrappers or duplicate dispatch functions solely for backward compatibility with stale test mocks**. Update tests and callers to bind directly to the new production classes.
 - Update tests and callers to strictly match the current, clean production contracts. Never bend production code backward for tests.
 
 ## 9. NASA JPL Rule 4: Single Sheet of Paper Architecture (≤ 60 Lines)
@@ -105,6 +106,8 @@ For any Python modifications:
 Derived from Gerard J. Holzmann's NASA JPL *Power of 10* safety-critical code rules (Rule 4):
 - **Function Limit**: No function should exceed **60 lines of code** (single sheet of standard reference paper).
 - **Module Limit**: Service files must be compact and single-purpose, targeting **≤ 60 lines per file** (excluding docstrings where reasonable, hard ceiling of 60 lines).
+- **One Substantive Class Per File**: When introducing patterns with multiple concrete classes (strategies, specifications, rules, adapters), **never pack multiple sibling classes into a single file**. Place each class in its own dedicated file inside a structured subpackage (e.g., `app/services/ocr/strategies/fast_alpr.py`, `app/services/ocr/strategies/rapidocr.py`).
+- **No Code Golfing to Beat the 60-Line Ceiling**: Strictly prohibit compressing syntax, removing empty lines, stripping docstrings, or squeezing multiple classes to beat the 60-line ceiling. If a file houses multiple classes or approaches 50+ lines, decompose it structurally into a subfolder with an `__init__.py` facade instead.
 - **Folder / Subpackage Hierarchy**: Decompose multi-step or multi-concern domains into structured subpackages (e.g. `app/services/detector/`, `app/services/ocr/`, `app/services/plate_rules/`) rather than large monolithic files.
 - **Single Cohesive Concern**: Each module must do one thing (e.g. geometry, occupancy policy, enhancement, spatial clustering).
 - **Harmony with Surgical Changes (§3)**: Apply this standard to new or refactored components; do not arbitrarily refactor untouched adjacent code unless requested.
@@ -129,13 +132,14 @@ Derived from Gerard J. Holzmann's NASA JPL *Power of 10* safety-critical code ru
 
 When breaking down large files, services, or functions:
 1. **Target Single Concerns**: Map responsibilities into dedicated subpackages (e.g., `app/services/<domain>/`).
-2. **Enforce NASA JPL Rule 4**: Every resulting file and function must be strictly ≤ 60 lines.
-3. **FastAPI & Async Conventions**:
+2. **One Class Per File in Subpackages**: Never pack sibling classes into a single module. Use dedicated subfolders with an `__init__.py` facade.
+3. **Enforce NASA JPL Rule 4**: Every resulting file and function must be strictly ≤ 60 lines without code golfing.
+4. **FastAPI & Async Conventions**:
    - Use `Annotated[..., Depends(...)]` for all parameter and dependency declarations.
    - Attach route prefixes, tags, and shared dependencies directly to `APIRouter(...)`.
    - Keep route handlers thin; delegate all business logic to service layers.
    - Use regular `def` for synchronous/CPU-bound tasks, `async def` only for non-blocking I/O, and `asyncer` when bridging.
-4. **Standard Modularization Master Prompt**:
+5. **Standard Modularization Master Prompt**:
    Use the following structured prompt for LLMs or subagents performing refactoring:
 
    ```markdown
@@ -143,10 +147,10 @@ When breaking down large files, services, or functions:
    Senior Python Architect enforcing Python 3.14, FastAPI conventions, and NASA JPL Rule 4.
 
    ### Objectives
-   1. Decompose: Break the monolithic code into cohesive, single-responsibility files (≤ 60 lines each).
+   1. Decompose: Break monolithic code into cohesive, single-responsibility files (≤ 60 lines each). Use subfolders (`<domain>/<subpackage>/`) with one substantive class per file.
    2. Modernize: Apply Python 3.14 native deferred annotations (PEP 649), `type` aliases (PEP 695), and `|` unions.
    3. Decouple: Separate API endpoints, schemas, dependencies, and business logic.
-   4. No Shims: Never add backwards-compatibility shims or dictionary wrappers.
+   4. No Shims or Code Golfing: Never add backwards-compatibility shims or compress code to satisfy line limits. Update callers and test mocks directly.
 
    ### Verification Criteria
    Must pass `uv run ruff check --fix`, `uv run ty check`, and `uv run pytest` with 0 errors.

@@ -6,14 +6,10 @@ from typing import Any
 from app.core.logging import logger
 from app.schemas import PlateResult, RecognitionResponse
 from app.services.image_processing import decode_image
-from app.services.ocr.fast_alpr_runner import run_fast_alpr_pipeline
-from app.services.pipeline import sorting as _sort
-from app.services.pipeline.fallback import _run_rapidocr_fullframe
+from app.services.ocr.strategies import FastALPROCREngine, RapidOCREngine
 from app.services.pipeline.helpers import _resolve_bytes
 from app.services.pipeline.response import _build_response
-from app.services.pipeline.stages import _scan_fast_alpr_crops, _scan_rapidocr_crops
-
-_sort_by_proximity = _sort.sort_by_proximity
+from app.services.pipeline.sorting import sort_by_proximity
 
 
 def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:
@@ -21,29 +17,31 @@ def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:
     import app.services.pipeline as pl
 
     detection = pl.VehicleDetector().detect(prepared_img)
-    vehicles = _sort_by_proximity(detection.vehicles) if detection.vehicles else []
+    vehicles = sort_by_proximity(detection.vehicles) if detection.vehicles else []
     logger.info(f"[pipeline] Stage 1: Detected {len(vehicles)} vehicle(s)")
 
+    fast_alpr = FastALPROCREngine()
     results: list[PlateResult] = []
     if vehicles:
         logger.info(f"[pipeline] Tier 1: Scanning {len(vehicles)} vehicle crop(s) via Fast-ALPR")
-        if results := _scan_fast_alpr_crops(vehicles):
+        if results := fast_alpr.scan_crops(vehicles):
             logger.info(f"[pipeline] Tier 1 matched {len(results)} plate(s): {[r.plate for r in results]}")
 
     if not results:
         logger.info("[pipeline] Tier 2: Running Full-Frame Fast-ALPR fallback")
-        if plates := run_fast_alpr_pipeline(prepared_img):
+        if plates := fast_alpr.scan_full_frame(prepared_img):
             logger.info(f"[pipeline] Tier 2 matched {len(plates)} plate(s): {[r.plate for r in plates]}")
             return plates
 
+    rapid_ocr = RapidOCREngine()
     if not results and vehicles:
         logger.info(f"[pipeline] Tier 3: Scanning {len(vehicles)} vehicle crop(s) via RapidOCR")
-        if results := _scan_rapidocr_crops(vehicles, filename):
+        if results := rapid_ocr.scan_crops(vehicles):
             logger.info(f"[pipeline] Tier 3 matched {len(results)} plate(s): {[r.plate for r in results]}")
 
     if not results:
         logger.info("[pipeline] Tier 4: Running Full-Frame RapidOCR fallback")
-        return _run_rapidocr_fullframe(prepared_img, filename)
+        return rapid_ocr.scan_full_frame(prepared_img, filename)
     return results
 
 
