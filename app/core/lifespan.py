@@ -8,8 +8,8 @@ from fastapi import FastAPI
 from app.core import constants
 from app.core.logging import logger
 from app.services.detector import VehicleDetector
-from app.services.ocr.fast_alpr_engine import check_fast_alpr_engine
-from app.services.ocr.rapidocr_engine import check_rapidocr_engine
+from app.services.ocr.fast_alpr import check_fast_alpr_engine
+from app.services.ocr.rapidocr import check_rapidocr_engine
 
 
 @asynccontextmanager

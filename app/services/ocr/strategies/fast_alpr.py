@@ -2,7 +2,7 @@
 
 from app.schemas import DetectedVehicle, PlateResult
 from app.services.image_processing import ImageInput
-from app.services.ocr.fast_alpr_runner import (
+from app.services.ocr.fast_alpr import (
     run_fast_alpr_on_vehicle,
     run_fast_alpr_pipeline,
 )

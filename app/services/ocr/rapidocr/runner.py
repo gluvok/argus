@@ -7,8 +7,8 @@ from PIL import Image
 
 from app.core.logging import logger
 from app.schemas import OCRToken
-from app.services.ocr.geometry import get_box_geometry
-from app.services.ocr.rapidocr_engine import get_rapidocr_engine
+from app.services.ocr.rapidocr.engine import get_rapidocr_engine
+from app.services.ocr.spatial.geometry import get_box_geometry
 
 
 def run_rapidocr_inference(img_pil: Image.Image, engine_getter: Any = None) -> list[OCRToken]:

@@ -4,12 +4,14 @@ from typing import Any
 
 from PIL import Image
 
-from app.services.ocr.candidates import collect_candidates
-from app.services.ocr.pairing import build_spatial_pairs
-from app.services.ocr.rapidocr_runner import run_rapidocr_inference
-from app.services.ocr.spatial import cluster_horizontal_lines
-from app.services.ocr.suppression import suppress_overlapping_candidates
-from app.services.ocr.tokens import clean_and_filter_tokens
+from app.services.ocr.rapidocr import run_rapidocr_inference
+from app.services.ocr.spatial import (
+    build_spatial_pairs,
+    clean_and_filter_tokens,
+    cluster_horizontal_lines,
+    collect_candidates,
+    suppress_overlapping_candidates,
+)
 
 
 def extract_plates(img_pil: Image.Image, engine_getter: Any, parse_fn: Any) -> list[dict[str, Any]]:

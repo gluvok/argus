@@ -7,19 +7,24 @@ from PIL import Image
 from app.core.contracts import require
 from app.schemas import OCRToken, PlateCandidate
 from app.services.image_processing import ImageInput, load_rgb
-from app.services.ocr.candidates import collect_candidates
-from app.services.ocr.enhancer import enhance_contrast, retry_contrast
 from app.services.ocr.extractor import extract_plates
-from app.services.ocr.geometry import get_box_centroid, get_box_geometry
-from app.services.ocr.pairing import build_spatial_pairs
-from app.services.ocr.rapidocr_engine import check_rapidocr_engine, get_rapidocr_engine
-from app.services.ocr.rapidocr_runner import run_rapidocr_inference
-from app.services.ocr.spatial import (
-    cluster_horizontal_lines,
-    compute_token_bounds,
-    is_same_horizontal_line,
+from app.services.ocr.rapidocr import (
+    check_rapidocr_engine,
+    get_rapidocr_engine,
+    run_rapidocr_inference,
 )
-from app.services.ocr.tokens import clean_and_filter_tokens
+from app.services.ocr.spatial import (
+    build_spatial_pairs,
+    clean_and_filter_tokens,
+    cluster_horizontal_lines,
+    collect_candidates,
+    compute_token_bounds,
+    enhance_contrast,
+    get_box_centroid,
+    get_box_geometry,
+    is_same_horizontal_line,
+    retry_contrast,
+)
 
 
 class PlateRecognizer:

@@ -285,7 +285,7 @@ def test_enhance_contrast_blackhat_and_unsharp():
     """Verify enhanced contrast produces valid RGB output and preserves dimensions."""
     from PIL import Image
 
-    from app.services.ocr.enhancer import enhance_contrast
+    from app.services.ocr.spatial import enhance_contrast
 
     img = Image.new("RGB", (200, 400), color=(200, 180, 50))
     enhanced = enhance_contrast(img)

@@ -202,7 +202,7 @@ def test_extract_multiple_distinct_plates(mock_get_engine, sample_image_bytes):
 
 def test_suppress_overlapping_candidates():
     from app.schemas import PlateCandidate
-    from app.services.ocr.suppression import suppress_overlapping_candidates
+    from app.services.ocr.spatial import suppress_overlapping_candidates
 
     cand1 = PlateCandidate(
         y_pos=10.0,

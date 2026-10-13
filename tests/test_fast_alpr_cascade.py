@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 
 from app.schemas import DetectedVehicle, DetectionResult, PlateResult
-from app.services.ocr.fast_alpr_padding import compute_padded_crop
+from app.services.ocr.fast_alpr import compute_padded_crop
 from app.services.pipeline.orchestrator import recognize_plate_image
 
 
@@ -45,7 +45,7 @@ def test_cascade_tier1_crop_fast_alpr_early_exit(
 from app.core.config import settings
 
 
-@patch("app.services.ocr.fast_alpr_runner.run_fast_alpr")
+@patch("app.services.ocr.fast_alpr.runner.run_fast_alpr")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier1_multi_vehicle_closest_order_strict_plates(
     mock_yolo, mock_run_fast_alpr, sample_image_bytes

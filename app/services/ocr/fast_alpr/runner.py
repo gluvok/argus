@@ -8,8 +8,8 @@ import numpy as np
 
 from app.schemas import PlateResult
 from app.services.image_processing import ImageInput, load_rgb
-from app.services.ocr.fast_alpr_engine import get_fast_alpr_engine
-from app.services.ocr.fast_alpr_padding import compute_padded_crop
+from app.services.ocr.fast_alpr.engine import get_fast_alpr_engine
+from app.services.ocr.fast_alpr.padding import compute_padded_crop
 from app.services.plate_rules import resolve_plate_from_text
 
 
@@ -54,4 +54,3 @@ def run_fast_alpr_on_vehicle(vehicle: Any) -> list[PlateResult]:
         return []
     crop_bgr = cv2.cvtColor(np.array(vehicle.crop), cv2.COLOR_RGB2BGR)
     return [PlateResult(plate=p, vehicle_box=vehicle.box) for p in run_fast_alpr(crop_bgr)]
-
