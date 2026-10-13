@@ -1,116 +1,150 @@
 # AGENTS.md
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+Behavioral guidelines to eliminate common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+**Tradeoff:** These guidelines prioritize absolute correctness, safety, and architectural cleanliness over speed.
+
+---
 
 ## 1. Think Before Coding
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+**Never assume. Never hide confusion. Surface tradeoffs upfront.**
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+Before writing any code:
+- State assumptions explicitly. If uncertain, stop and ask.
+- If multiple interpretations exist, present them - never pick silently.
+- If a simpler approach exists, say so. Push back against complexity.
+- If something is unclear or under-specified, stop immediately. Name what is confusing and request clarification.
 
-## 2. Simplicity First
+---
 
-**Minimum code that solves the problem. Nothing speculative.**
+## 2. Simplicity First (Absolute Prohibition on Speculative Code)
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+**Write only the minimum code required to solve the immediate problem. Speculation is strictly forbidden.**
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+- Absolutely no features beyond what was explicitly requested.
+- Absolutely no abstractions or utility wrappers for single-use code.
+- Absolutely no speculative "flexibility," "extensibility," or "configurability."
+- Absolutely no defensive error handling for impossible scenarios.
+- If an implementation can be done in 30 lines instead of 100, rewrite it immediately.
+- Ask: "Would a principal engineer say this is overengineered?" If yes, simplify.
 
-## 3. Surgical Changes
+---
 
-**Touch only what you must. Clean up only your own mess.**
+## 3. Surgical Changes & Zero Unrelated Churn
+
+**Touch strictly what you must. Clean up your own mess immediately.**
 
 When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+- Never "improve," reformat, or re-comment adjacent code unless directly instructed.
+- Never refactor working components outside the task scope.
+- Match existing style and idioms precisely.
+- If unrelated dead code is discovered, mention it in your response - do not delete it in the same change.
 
 When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+- Immediately remove all imports, variables, functions, and models that YOUR changes made unused.
+- Do not leave unused imports or dead references behind.
 
-The test: Every changed line should trace directly to the user's request.
+The Golden Test: **Every single changed line in a diff must trace directly to the user's prompt.**
+
+---
 
 ## 4. Goal-Driven Execution
 
-**Define success criteria. Loop until verified.**
+**Define verifiable success criteria. Loop independently until verified.**
 
 Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+- "Add validation" → "Write unit tests for invalid inputs, then make them pass."
+- "Fix the bug" → "Write a reproduction test, then make it pass."
+- "Refactor X" → "Ensure full test suite passes before and after."
 
-For multi-step tasks, state a brief plan:
+For multi-step tasks, state a verifiable plan:
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+Loop independently against concrete criteria. Never claim completion without running verification.
 
-## 5. Python Quality & Verification Gates
+---
 
-**Always enforce the 3-step verification loop. All three must pass.**
+## 5. Python Quality & Verification Gates (Non-Negotiable)
 
-For any Python modifications:
-1. **Lint & Code Style**: Run `uv run ruff check --fix`. If manual errors remain, create an implementation plan and fix them cleanly without using `# noqa` suppressions.
-2. **Type Checking**: Run `uv run ty check`. If type diagnostics are found, create an implementation plan and fix the underlying typing without using `# type: ignore`.
-3. **Test Suite**: Run `uv run pytest` to confirm all unit and integration tests pass without regression.
-4. **Iterative Verification**: Keep looping through `uv run ruff check --fix`, `uv run ty check`, and `uv run pytest` until all three yield **0 errors, 0 warnings, and all tests pass**.
+**The 3 verification gates are absolute law. All three must pass with 0 errors and 0 warnings.**
 
-**The 3 mandatory commands that must always work:**
+For any Python modifications, the following loop must be enforced iteratively:
+1. **Lint & Code Style**: Run `uv run ruff check --fix`. All checks must pass cleanly.
+2. **Type Checking**: Run `uv run ty check`. All diagnostics must be resolved cleanly.
+3. **Test Suite**: Run `uv run pytest`. All unit and integration tests must pass with 100% success.
+4. **Zero-Tolerance Suppression Ban**:
+   - Strictly prohibited from using `# noqa` or `# ruff: noqa` to suppress lint errors.
+   - Strictly prohibited from using `# type: ignore` to bypass typing checks.
+   - Strictly prohibited from marking failing tests as `@pytest.mark.skip` or `xfail` to fake a pass.
+   - Every lint issue and type error must be solved cleanly at the root cause.
+
+**The 3 mandatory commands that must always exit with code 0:**
 - `uv run ruff check --fix` (0 errors, 0 warnings)
 - `uv run ty check` (0 errors, 0 warnings)
 - `uv run pytest` (all tests pass)
 
+---
+
 ## 6. Update Documentation (`docs/` and `README.md`)
 
-**Always keep documentation in `docs/` and `README.md` in sync with codebase changes.**
+**Documentation must remain in continuous sync with codebase changes.**
 
 - Explicitly update `README.md` and relevant guides in `docs/` (such as `docs/ARCHITECTURE.md`) whenever adding, modifying, or removing features, API endpoints, environment variables, architecture patterns, dependencies, or workflows.
-- Ensure all setup instructions, configuration options, usage examples, and architectural diagrams remain accurate and up-to-date.
+- Keep setup instructions, configuration options, usage examples, and architectural diagrams accurate and up to date in the same turn.
+
+---
 
 ## 7. Dependency Management via `uv`
 
-**Always use `uv` commands to add or remove dependencies. Never directly edit `pyproject.toml` dependencies.**
+**Always use `uv` commands. Never manually edit `pyproject.toml` dependencies.**
 
 - Use `uv add <package>` to install and record new dependencies.
 - Use `uv remove <package>` to uninstall and remove dependencies.
-- Never manually edit the `dependencies` or `dependency-groups` arrays in `pyproject.toml` directly; let `uv` manage dependency specification, lockfile synchronization (`uv.lock`), and virtual environment state.
+- Strictly prohibited from manually editing `dependencies` or `dependency-groups` arrays in `pyproject.toml`; let `uv` manage lockfile synchronization (`uv.lock`) and environment state.
 
-## 8. No Backward-Compatibility Shims
+---
 
-**Never add or keep backward-compatibility code for obsolete tests or legacy implementations.**
+## 8. No Backward-Compatibility Shims (Absolute Strictness)
 
-- Do not compromise production code types or signatures to satisfy stale test mocks or old conventions.
-- If a function returns a typed dataclass/model, never add `isinstance(x, dict)` checks, dict subscription shims (`__getitem__`, `get`), or fallback adapters.
-- When modernizing procedural code to OOP patterns (e.g. Strategy, Specification) or decomposing into subpackages, **never retain legacy procedural wrappers or duplicate dispatch functions solely for backward compatibility with stale test mocks**. Update tests and callers to bind directly to the new production classes.
-- Update tests and callers to strictly match the current, clean production contracts. Never bend production code backward for tests.
+**Zero tolerance for backward-compatibility code, forwarding wrappers, or defensive shims.**
+
+- **Immediate Deletion of Superseded Code**:
+  - When replacing a function, class, pattern, or module, **delete the old implementation immediately**.
+  - Strictly prohibited from leaving legacy forwarding wrappers, procedural aliases, or duplicate dispatch layers (e.g. leaving procedural `_scan_crops` to call `Strategy.scan_crops`).
+  - Strictly prohibited from alias pointers (`old_name = new_name`).
+- **No Defensive / Dual-Type Parameter Shims**:
+  - Never introduce union parameters (`x: tuple | BoundingBox` or `data: dict | Model`) solely so old test fixtures or legacy callers don't fail.
+  - Never add runtime type branching (`if isinstance(x, dict): ...`) to handle obsolete formats.
+- **Production Dictates Tests, Never the Reverse**:
+  - Production code defines the clean architectural contract.
+  - If an existing test fails because it imports a deleted function, targets a deleted module, patches an obsolete namespace, or passes outdated mock structures, **update the test to match the clean production contract immediately**.
+  - **Never compromise or bend production signatures, types, or architectures backward to satisfy stale test mocks.**
+- **No Phased or Transitional Deprecations**:
+  - Refactors in this codebase are atomic. Strictly prohibited from adding `DeprecationWarning`, fallback adapters, or transitional shims. Migrate all callers and tests in the exact same atomic change.
+
+---
 
 ## 9. NASA JPL Rule 4: Single Sheet of Paper Architecture (≤ 60 Lines)
 
-**Every file and function must fit on a single printed sheet of paper.**
+**Every file and function must fit on a single printed sheet of standard paper.**
 
 Derived from Gerard J. Holzmann's NASA JPL *Power of 10* safety-critical code rules (Rule 4):
-- **Function Limit**: No function should exceed **60 lines of code** (single sheet of standard reference paper).
-- **Module Limit**: Service files must be compact and single-purpose, targeting **≤ 60 lines per file** (excluding docstrings where reasonable, hard ceiling of 60 lines).
+- **Function Limit**: No function may exceed **60 lines of code**.
+- **Module Limit**: Service files must be compact and single-purpose, targeting **≤ 60 lines per file** (hard ceiling of 60 lines).
 - **One Substantive Class Per File**: When introducing patterns with multiple concrete classes (strategies, specifications, rules, adapters), **never pack multiple sibling classes into a single file**. Place each class in its own dedicated file inside a structured subpackage (e.g., `app/services/ocr/strategies/fast_alpr.py`, `app/services/ocr/strategies/rapidocr.py`).
-- **No Code Golfing to Beat the 60-Line Ceiling**: Strictly prohibit compressing syntax, removing empty lines, stripping docstrings, or squeezing multiple classes to beat the 60-line ceiling. If a file houses multiple classes or approaches 50+ lines, decompose it structurally into a subfolder with an `__init__.py` facade instead.
-- **Folder / Subpackage Hierarchy**: Decompose multi-step or multi-concern domains into structured subpackages (e.g. `app/services/detector/`, `app/services/ocr/`, `app/services/plate_rules/`) rather than large monolithic files.
+- **Absolute Prohibition on Code Golfing**:
+  - Strictly prohibited from compressing syntax, removing empty lines, stripping docstrings, joining statements with semicolons/commas, or squeezing multiple classes to beat the 60-line ceiling.
+  - If a file approaches 50+ lines due to multiple classes or concerns, **the only acceptable solution is structural decomposition into a subfolder with an `__init__.py` facade**.
+- **Subpackage Hierarchy**: Decompose multi-step or multi-concern domains into structured subpackages (e.g. `app/services/detector/`, `app/services/ocr/`, `app/services/plate_rules/`) rather than large monolithic files.
 - **Single Cohesive Concern**: Each module must do one thing (e.g. geometry, occupancy policy, enhancement, spatial clustering).
 - **Harmony with Surgical Changes (§3)**: Apply this standard to new or refactored components; do not arbitrarily refactor untouched adjacent code unless requested.
+
+---
 
 ## 10. Python 3.14 Standards & Modern Idioms
 
@@ -118,13 +152,15 @@ Derived from Gerard J. Holzmann's NASA JPL *Power of 10* safety-critical code ru
 
 - **PEP 649 Deferred Evaluation of Annotations**:
   - Never use string quotes for forward references (e.g. use `def add(node: Node) -> Node:`, not `'Node'`).
-  - Do not use `from __future__ import annotations`.
+  - Strictly prohibited from using `from __future__ import annotations`.
 - **PEP 695 Type Parameter Syntax**:
   - Prefer the `type` statement for type aliases (e.g. `type TokenMap = dict[str, str]`).
   - Use native generic parameter syntax for functions and classes (`class Pipeline[T]:`, `def process[T](item: T) -> T:`).
 - **Modern Collections & Unions**:
   - Exclusively use built-in collection types (`list`, `dict`, `tuple`, `set`) and pipe unions (`str | None`, `int | float`).
-  - Never import `List`, `Dict`, `Optional`, or `Union` from `typing`.
+  - Strictly prohibited from importing `List`, `Dict`, `Optional`, or `Union` from `typing`.
+
+---
 
 ## 11. Code Modularization Protocol & Master Prompt
 
@@ -150,7 +186,7 @@ When breaking down large files, services, or functions:
    1. Decompose: Break monolithic code into cohesive, single-responsibility files (≤ 60 lines each). Use subfolders (`<domain>/<subpackage>/`) with one substantive class per file.
    2. Modernize: Apply Python 3.14 native deferred annotations (PEP 649), `type` aliases (PEP 695), and `|` unions.
    3. Decouple: Separate API endpoints, schemas, dependencies, and business logic.
-   4. No Shims or Code Golfing: Never add backwards-compatibility shims or compress code to satisfy line limits. Update callers and test mocks directly.
+   4. Absolute Zero Tolerance on Shims & Code Golfing: Never retain backwards-compatibility shims, forwarding functions, or dual-type parameters. Never compress code to satisfy line limits. Update callers and test mocks directly.
 
    ### Verification Criteria
    Must pass `uv run ruff check --fix`, `uv run ty check`, and `uv run pytest` with 0 errors.
@@ -158,5 +194,4 @@ When breaking down large files, services, or functions:
 
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
-
+**These guidelines are working if:** fewer unnecessary changes in diffs, zero backwards-compatibility shims in production code, zero code-golfing workarounds, and clarifying questions come before implementation rather than after mistakes.
