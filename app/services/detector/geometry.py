@@ -3,9 +3,8 @@
 from typing import Any
 
 from app.core.contracts import require
+from app.services.detector.box import BoundingBox
 from app.services.detector.constants import MIN_CROP_EDGE_PX
-
-type BoundingBox = tuple[int, int, int, int]
 
 
 def clamp_box(box: Any, width: int, height: int) -> BoundingBox | None:
@@ -27,33 +26,24 @@ def clamp_box(box: Any, width: int, height: int) -> BoundingBox | None:
 
     if x2 - x1 < MIN_CROP_EDGE_PX or y2 - y1 < MIN_CROP_EDGE_PX:
         return None
-    return (x1, y1, x2, y2)
+    return BoundingBox(x1, y1, x2, y2)
 
 
-def pad_box(box: BoundingBox, width: int, height: int, padding_ratio: float = 0.03) -> BoundingBox:
+def pad_box(box: tuple[int, int, int, int], width: int, height: int, padding_ratio: float = 0.03) -> BoundingBox:
     """Add a safety padding margin around a bounding box, clamped to image boundaries."""
-    bw, bh = box[2] - box[0], box[3] - box[1]
-    pad_x, pad_y = int(bw * padding_ratio), int(bh * padding_ratio)
-    return (max(0, box[0] - pad_x), max(0, box[1] - pad_y), min(width, box[2] + pad_x), min(height, box[3] + pad_y))
+    return BoundingBox(*box).pad(width, height, padding_ratio)
 
 
-def is_contained(inner: BoundingBox, outer: BoundingBox, threshold: float = 0.80) -> bool:
+def is_contained(inner: tuple[int, int, int, int], outer: tuple[int, int, int, int], threshold: float = 0.80) -> bool:
     """Check if inner box is predominantly contained within outer box."""
-    ix1, iy1 = max(inner[0], outer[0]), max(inner[1], outer[1])
-    ix2, iy2 = min(inner[2], outer[2]), min(inner[3], outer[3])
-    if ix2 <= ix1 or iy2 <= iy1:
-        return False
-    inter_area = (ix2 - ix1) * (iy2 - iy1)
-    inner_area = max(1, (inner[2] - inner[0]) * (inner[3] - inner[1]))
-    return (inter_area / inner_area) >= threshold
+    return BoundingBox(*outer).contains(inner, threshold)
 
 
-def box_iou(a: BoundingBox, b: BoundingBox) -> float:
+def box_iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
     """Compute Intersection-over-Union (IoU) between two bounding boxes."""
-    ix1, iy1, ix2, iy2 = max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])
-    if ix2 <= ix1 or iy2 <= iy1:
-        return 0.0
-    inter = (ix2 - ix1) * (iy2 - iy1)
-    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
-    return inter / max(1, union)
+    return BoundingBox(*a).iou(b)
+
+
+__all__ = ["BoundingBox", "box_iou", "clamp_box", "is_contained", "pad_box"]
+
 

@@ -43,5 +43,5 @@ class VehicleDetector:
         pil_img = load_rgb(image_input)
         vehicles = self._run_detection(pil_img, constants.VEHICLE_CONF_THRESH)
         w, h = pil_img.width, pil_img.height
-        detected = [DetectedVehicle(vt, b, pil_img.crop(pad_box(b, w, h)), pad_box(b, w, h)) for vt, b in vehicles]
+        detected = [DetectedVehicle(vt, b, pil_img.crop(b.pad(w, h)), b.pad(w, h)) for vt, b in vehicles]
         return DetectionResult(vehicles=detected)

@@ -1,6 +1,7 @@
 """Tests for cross-class vehicle spatial deduplication and duplicate plate suppression."""
 
 from app.services.detector import VehicleDetector
+from app.services.detector.box import BoundingBox
 from app.services.detector.geometry import box_iou
 from app.services.detector.parser import _dedup_vehicles
 
@@ -23,8 +24,8 @@ def test_box_iou_partial_overlap():
 
 def test_dedup_overlapping_bus_and_truck():
     # Truck with high confidence and bus duplicate with lower confidence
-    truck = (0.76, 100000, "truck", (10, 50, 390, 450))
-    bus = (0.35, 99000, "bus", (8, 52, 388, 448))
+    truck = (0.76, 100000, "truck", BoundingBox(10, 50, 390, 450))
+    bus = (0.35, 99000, "bus", BoundingBox(8, 52, 388, 448))
 
     deduped = _dedup_vehicles([truck, bus])
     assert len(deduped) == 1
@@ -41,3 +42,30 @@ def test_detect_image_4_trucks_without_bus():
     types = [v.vehicle_type for v in result.vehicles]
     assert types == ["truck", "truck"]
     assert "bus" not in types
+
+
+def test_bounding_box_oop_methods():
+    from app.services.detector.box import BoundingBox
+
+    box = BoundingBox(10, 20, 110, 120)
+    assert box.x1 == 10 and box.y1 == 20
+    assert box.x2 == 110 and box.y2 == 120
+    assert box.area == 10000
+    assert abs(box.aspect_ratio - 1.0) < 1e-4
+
+    # Test pad method
+    padded = box.pad(200, 200, 0.10)
+    assert padded.x1 == 0 and padded.y1 == 10
+    assert padded.x2 == 120 and padded.y2 == 130
+
+    # Test contains method
+    inner = BoundingBox(20, 30, 80, 90)
+    assert box.contains(inner, 0.80) is True
+    assert inner.contains(box, 0.80) is False
+
+    # Test iou method
+    identical = BoundingBox(10, 20, 110, 120)
+    assert box.iou(identical) == 1.0
+    disjoint = BoundingBox(200, 200, 300, 300)
+    assert box.iou(disjoint) == 0.0
+

@@ -5,7 +5,7 @@ import numpy as np
 from app.core import constants as cc
 from app.core.bounds import bounded
 from app.services.detector import constants as dc
-from app.services.detector.geometry import BoundingBox, box_iou, clamp_box, is_contained
+from app.services.detector.geometry import BoundingBox, clamp_box
 
 
 def _dedup_vehicles(candidates: list[tuple[float, int, str, BoundingBox]]) -> list[tuple[str, BoundingBox]]:
@@ -13,9 +13,9 @@ def _dedup_vehicles(candidates: list[tuple[float, int, str, BoundingBox]]) -> li
     candidates.sort(key=lambda item: item[0], reverse=True)
     deduped: list[tuple[str, BoundingBox]] = []
     for _, _, v_type, b in candidates:
-        if not any(box_iou(b, eb) > cc.VEHICLE_IOU_THRESH or is_contained(b, eb, 0.70) or is_contained(eb, b, 0.70) for _, eb in deduped):
+        if not any(b.iou(eb) > cc.VEHICLE_IOU_THRESH or eb.contains(b, 0.70) or b.contains(eb, 0.70) for _, eb in deduped):
             deduped.append((v_type, b))
-    deduped.sort(key=lambda item: (item[1][2] - item[1][0]) * (item[1][3] - item[1][1]), reverse=True)
+    deduped.sort(key=lambda item: item[1].area, reverse=True)
     return deduped
 
 
@@ -37,7 +37,7 @@ def parse_detections(
         box = clamp_box(raw_b, width, height)
         if box is None:
             continue
-        area = (box[2] - box[0]) * (box[3] - box[1])
+        area = box.area
 
         if cls_id in dc.VEHICLE_CLASS_NAMES and conf >= vehicle_conf_thresh and area >= min_v_area:
             vehicle_candidates.append((float(conf), area, dc.VEHICLE_CLASS_NAMES[cls_id], box))

@@ -214,6 +214,7 @@ _EXPECTED_ACTIVE_FILES = {
     "server.py",
     "services/__init__.py",
     "services/detector/__init__.py",
+    "services/detector/box.py",
     "services/detector/constants.py",
     "services/detector/detector.py",
     "services/detector/geometry.py",
