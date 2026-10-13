@@ -5,6 +5,7 @@ from typing import Any
 
 from app.services.plate_rules.corrections import STATE_PREFIX_CORRECTIONS
 from app.services.plate_rules.decals import HSRP_PREFIXES
+from app.services.plate_rules.specs import STANDARD_PLATE_SPEC
 from app.services.plate_rules.states import INDIAN_PLATE_REGEX, STATE_CODES
 
 
@@ -24,8 +25,11 @@ def parse_plate_info(raw_plate: str | None) -> dict[str, Any] | None:
     prefix_2 = cleaned[:2]
     if prefix_2 in STATE_PREFIX_CORRECTIONS:
         fixed = STATE_PREFIX_CORRECTIONS[prefix_2] + cleaned[2:]
-        if INDIAN_PLATE_REGEX.fullmatch(fixed):
+        if STANDARD_PLATE_SPEC.is_satisfied_by(fixed):
             cleaned = fixed
+
+    if not STANDARD_PLATE_SPEC.is_satisfied_by(cleaned):
+        return None
 
     match = INDIAN_PLATE_REGEX.fullmatch(cleaned)
     if not match:

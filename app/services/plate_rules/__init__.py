@@ -10,8 +10,22 @@ from app.services.plate_rules.normalizers import (
 )
 from app.services.plate_rules.parser import parse_plate_info
 from app.services.plate_rules.resolver import resolve_plate_from_text
+from app.services.plate_rules.specs import (
+    STANDARD_PLATE_SPEC,
+    CompositePlateSpec,
+    IndianPlateFormatSpec,
+    NonDecalSpec,
+    PlateSpec,
+    StatePrefixSpec,
+)
 
 __all__ = [
+    "STANDARD_PLATE_SPEC",
+    "CompositePlateSpec",
+    "IndianPlateFormatSpec",
+    "NonDecalSpec",
+    "PlateSpec",
+    "StatePrefixSpec",
     "_normalize_8_char",
     "_normalize_9_char",
     "is_decal_word",

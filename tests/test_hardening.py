@@ -256,6 +256,7 @@ _EXPECTED_ACTIVE_FILES = {
     "services/plate_rules/normalizers.py",
     "services/plate_rules/parser.py",
     "services/plate_rules/resolver.py",
+    "services/plate_rules/specs.py",
     "services/plate_rules/states.py",
 }
 
