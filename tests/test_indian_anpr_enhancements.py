@@ -122,7 +122,7 @@ def test_phone_number_filtering():
 # ------------------------------------------------------------------------------
 
 
-@patch("app.services.ocr.PlateRecognizer.get_engine")
+@patch("app.services.ocr.PlateRecognizer.get_rapidocr_engine")
 def test_multi_token_2_line_plate_reconstruction(mock_get_engine, sample_image_bytes):
     """Plate split into 4 tokens across 2 lines (RJ 09 / GA 0165) must be reconstructed."""
     # Line 1: 'RJ' (box: x=10..30, y=10..25) and '09' (box: x=35..55, y=10..25)
@@ -244,7 +244,7 @@ def test_vehicle_detector_pad_box():
     assert padded_edge == (0, 0, 100, 100)
 
 
-@patch("app.services.ocr.PlateRecognizer.get_engine")
+@patch("app.services.ocr.PlateRecognizer.get_rapidocr_engine")
 def test_commercial_bus_raw_text_extracts_hr69d4793_over_antil(mock_get_engine, sample_image_bytes):
     """Real 2-line plate HR69 / D4793 must be selected over coerced body decals like ANTIL."""
     mock_get_engine.return_value = _mock_ocr_engine(

@@ -1,44 +1,20 @@
-"""RapidOCR engine initialization and raw bounding token extraction."""
+"""Execute RapidOCR inference and extract raw bounding tokens."""
 
-import logging
 from typing import Any
 
 import numpy as np
 from PIL import Image
-from rapidocr import RapidOCR
 
 from app.core.logging import logger
 from app.schemas import OCRToken
 from app.services.ocr.geometry import get_box_geometry
-
-_rapid_logger = logging.getLogger("RapidOCR")
-_rapid_logger.setLevel(logging.ERROR)
-for _h in _rapid_logger.handlers:
-    _h.setLevel(logging.ERROR)
-
-_engine: RapidOCR | None = None
+from app.services.ocr.rapidocr_engine import get_rapidocr_engine
 
 
-def get_engine() -> RapidOCR:
-    """Return singleton RapidOCR engine instance, creating it on first access."""
-    global _engine
-    if _engine is None:
-        from app.core.constants import ONNX_NUM_THREADS
-
-        params = {"EngineConfig.onnxruntime.intra_op_num_threads": ONNX_NUM_THREADS}
-        _engine = RapidOCR(params=params)
-    return _engine
-
-
-def check_engine() -> bool:
-    """Verify that the RapidOCR engine is operational during startup health checks."""
-    return get_engine() is not None
-
-
-def run_ocr_inference(img_pil: Image.Image, engine_or_getter: Any = None) -> list[OCRToken]:
-    """Execute RapidOCR engine and return bounding tokens with geometry."""
+def run_rapidocr_inference(img_pil: Image.Image, engine_getter: Any = None) -> list[OCRToken]:
+    """Execute RapidOCR engine and return bounding tokens sorted vertically."""
     try:
-        eng = engine_or_getter() if callable(engine_or_getter) else (engine_or_getter or get_engine())
+        eng = engine_getter() if callable(engine_getter) else (engine_getter or get_rapidocr_engine())
         res = eng(np.array(img_pil))
         txts = getattr(res, "txts", None) if res else None
         scores = getattr(res, "scores", None) if res else None
