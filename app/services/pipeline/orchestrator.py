@@ -13,7 +13,7 @@ from app.services.pipeline.helpers import _resolve_bytes
 from app.services.pipeline.response import _build_response
 from app.services.pipeline.stages import _scan_fast_alpr_crops, _scan_rapidocr_crops
 
-_sort_by_proximity, _merge_plates = _sort.sort_by_proximity, _sort.merge_plates
+_sort_by_proximity = _sort.sort_by_proximity
 
 
 def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:

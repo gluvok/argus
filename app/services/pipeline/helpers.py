@@ -10,7 +10,6 @@ from app.schemas import PlateResult
 
 def validate_plate_results(
     raw_results: Any,
-    vehicle_type: str | None = None,
     vehicle_box: tuple[int, int, int, int] | None = None,
 ) -> list[PlateResult]:
     """Validate and convert raw dictionary outputs into PlateResult Pydantic schemas."""
@@ -20,8 +19,6 @@ def validate_plate_results(
     for item in raw_results:
         if isinstance(item, dict) and item.get("plate") and item.get("plate") != "N/A":
             entry = dict(item)
-            if vehicle_type is not None:
-                entry.setdefault("vehicle_type", vehicle_type)
             if vehicle_box is not None:
                 entry.setdefault("vehicle_box", vehicle_box)
             try:

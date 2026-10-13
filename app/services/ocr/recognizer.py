@@ -50,7 +50,7 @@ class PlateRecognizer:
     def _extract_plates_from_image_array(self, img: Image.Image) -> list[dict[str, Any]]:
         return extract_plates(img, self.get_engine, self.parse_plate_info)
 
-    def recognize(self, image_input: ImageInput, filename: str = "image.jpg") -> list[dict[str, Any]]:
+    def recognize(self, image_input: ImageInput) -> list[dict[str, Any]]:
         require(image_input is not None, "recognize() called with no image")
         img = load_rgb(image_input)
         res = self._extract_plates_from_image_array(img)

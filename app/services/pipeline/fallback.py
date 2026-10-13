@@ -17,8 +17,8 @@ def run_full_frame_fallback(
     """Execute full-frame RapidOCR when vehicle crops yield no plates or no vehicles detected."""
     logger.info(f"Running full-frame RapidOCR fallback on '{filename}'")
     try:
-        raw = recognizer.recognize(image_input, filename=filename)
-        return validate_plate_results(raw, vehicle_type=None, vehicle_box=None)
+        raw = recognizer.recognize(image_input)
+        return validate_plate_results(raw)
     except (ANPRServiceError, ValueError, RuntimeError, OSError, KeyError, AttributeError) as exc:
         logger.error(f"Full-frame OCR failed on '{filename}': {exc}")
         return []

@@ -38,12 +38,9 @@ flowchart TD
     P_A -- 0 Plates from Crops --> FF[Pass B: Full-Frame OCR<br/><code>app/services/pipeline/stages.py</code>]
     FF --> OCR_PIPELINE
     
-    P_A --> ASSOC[Spatial Association & Dedup<br/><code>app/services/pipeline/association.py</code>]
-    FF --> ASSOC
-    
-    ASSOC --> RESP[Factual Response Serialization<br/><code>app/services/pipeline/response.py</code>]
+    P_A --> RESP[Response Serialization<br/><code>app/services/pipeline/response.py</code>]
+    FF --> RESP
     OCR_FB --> RESP
-    H1 --> RESP
     RESP --> OUT[RecognitionResponse<br/><code>app/schemas.py</code>]
 ```
 
@@ -113,7 +110,7 @@ All service domains in `app/` strictly follow **NASA JPL Rule 4** (Holzmann's *P
 | **REST Server** | [`app/server.py`](../app/server.py) | Application factory assembling modular `lifespan`, `middleware`, `errors`, and `api_router`. |
 | **API Layer** | [`app/api/`](../app/api/) | `router.py`, `routes/info.py`, `routes/recognition.py`, `dependencies.py`, `errors.py`: Thin route handlers, APIRouters, dependency injection, and centralized JSON error responses. |
 | **Core Utilities** | [`app/core/`](../app/core/) | `lifespan.py` (model pre-warming), `middleware.py` (CORS, request logging, and timing headers), `contracts.py` (`require`, `ensure`), `bounds.py` (`bounded`), `config.py`, `constants.py`, `exceptions.py`, `logging.py`. |
-| **Pipeline Orchestrator** | [`app/services/pipeline/`](../app/services/pipeline/) | `orchestrator.py`, `stages.py`, `sorting.py`, `association.py`, `fallback.py`, `helpers.py`, `response.py`: Coordinates detection, stage progress logging, proximity sorting, dual-pass OCR, fallbacks, coordinate adjustments, and response packaging. |
+| **Pipeline Orchestrator** | [`app/services/pipeline/`](../app/services/pipeline/) | `orchestrator.py`, `stages.py`, `sorting.py`, `fallback.py`, `helpers.py`, `response.py`: Coordinates detection, stage progress logging, proximity sorting, dual-pass OCR, fallbacks, coordinate adjustments, and response packaging. |
 | **Vehicle Detector** | [`app/services/detector/`](../app/services/detector/) | `detector.py`, `geometry.py`, `parser.py`, `constants.py`: YOLO26 model singleton, coordinate clamping/containment, and COCO constants. |
 | **Image Processing** | [`app/services/image_processing/`](../app/services/image_processing/) | `loader.py`, `security.py`, `transformer.py`, `constants.py`: Polymorphic image decoding, EXIF orientation, decompression bomb defense, and permitted MIME/format constants. |
 | **Plate Recognizer** | [`app/services/ocr/`](../app/services/ocr/) | `recognizer.py`, `engine.py`, `enhancer.py`, `extractor.py`, `geometry.py`, `pairing.py`, `spatial.py`, `tokens.py`, `candidates.py`, `suppression.py`: RapidOCR ONNX inference, CLAHE/Black-Hat enhancement, 2D token pairing, Spatial NMS, and candidate selection. |

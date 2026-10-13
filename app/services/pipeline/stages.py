@@ -12,14 +12,14 @@ from app.services.pipeline.helpers import (
 )
 
 
-def _ocr_single_vehicle(recognizer: Any, vehicle: DetectedVehicle, filename: str) -> list[PlateResult]:
+def _ocr_single_vehicle(recognizer: Any, vehicle: DetectedVehicle) -> list[PlateResult]:
     """Execute RapidOCR on a single vehicle crop with coordinate translation back to frame space."""
     if vehicle.crop is None:
         return []
-    raw = recognizer.recognize(vehicle.crop, filename=filename)
+    raw = recognizer.recognize(vehicle.crop)
     if any(r.get("plate") and r.get("plate") != "N/A" for r in raw):
         raw = _adjust_crop_coordinates(raw, vehicle.crop_box)
-    return validate_plate_results(raw, vehicle_type=vehicle.vehicle_type, vehicle_box=vehicle.box)
+    return validate_plate_results(raw, vehicle_box=vehicle.box)
 
 
 def _scan_fast_alpr_crops(vehicles: list[DetectedVehicle]) -> list[PlateResult]:
@@ -43,7 +43,7 @@ def _scan_rapidocr_crops(vehicles: list[DetectedVehicle], filename: str) -> list
     recognizer, results, seen = pl.PlateRecognizer(), [], set()
     try:
         for v in vehicles:
-            for p in _ocr_single_vehicle(recognizer, v, filename):
+            for p in _ocr_single_vehicle(recognizer, v):
                 if p.plate and p.plate != "N/A" and p.plate not in seen:
                     seen.add(p.plate), results.append(p)
             if results and not settings.ENABLE_MULTI_VEHICLE_OCR:
