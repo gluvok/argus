@@ -19,16 +19,13 @@ CORS_ALLOW_METHODS: list[str] = ["*"]
 CORS_ALLOW_HEADERS: list[str] = ["*"]
 
 # YOLO Detection & Tuning
-_ONNX_MODEL, _PT_MODEL = "yolo26n.onnx", "yolo26n.pt"
-YOLO_MODEL_NAME = _ONNX_MODEL if os.path.exists(_ONNX_MODEL) else _PT_MODEL
+YOLO_MODEL_NAME = "yolo26n.onnx"
 YOLO_CONFIG_DIR = ".cache/ultralytics"
-HUMAN_CONF_THRESH = 0.30
 VEHICLE_CONF_THRESH = 0.35
 DEFAULT_YOLO_IMGSZ = 640
 YOLO_AGNOSTIC_NMS = True
 
 # Spatial Geometry Filtering
-MIN_HUMAN_BOX_AREA_RATIO = 0.005
 MIN_VEHICLE_BOX_AREA_RATIO = 0.01
 VEHICLE_IOU_THRESH = 0.50
 

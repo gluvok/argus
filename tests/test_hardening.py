@@ -217,7 +217,6 @@ _EXPECTED_ACTIVE_FILES = {
     "services/detector/constants.py",
     "services/detector/detector.py",
     "services/detector/geometry.py",
-    "services/detector/occupancy.py",
     "services/detector/parser.py",
     "services/image_processing/__init__.py",
     "services/image_processing/constants.py",

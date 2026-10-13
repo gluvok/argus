@@ -11,9 +11,7 @@ Argus executes a two-stage artificial intelligence flow delivering factual detec
 ```mermaid
 flowchart TD
     A[Input Image / HTTP Upload] --> B[Input Ingestion & Safety Validation<br/><code>app/services/image_processing/</code>]
-    B --> C[Stage 1: YOLO26 Vehicle & Occupancy Detection<br/><code>app/services/detector/</code>]
-    
-    C --> H1[Human Spatial Partitioning<br/><code>humans_outside</code> & <code>humans_inside</code>]
+    B --> C[Stage 1: YOLO26 Vehicle Detection<br/><code>app/services/detector/</code>]
     
     C -- Vehicles Detected --> D[Pass A: Per-Vehicle Crop Extraction<br/><code>app/services/detector/</code>]
     D --> OCR_A[PlateRecognizer.recognize<br/><code>app/services/ocr/</code>]
@@ -37,7 +35,7 @@ flowchart TD
     
     OCR_A -- Crop Plates & Boxes Translated --> P_A[Pass A Results<br/><code>helpers._adjust_crop_coordinates</code>]
     
-    P_A -- ENABLE_FULL_FRAME_OCR or 0 Plates from Crops --> FF[Pass B: Full-Frame OCR<br/><code>app/services/pipeline/stages.py</code>]
+    P_A -- 0 Plates from Crops --> FF[Pass B: Full-Frame OCR<br/><code>app/services/pipeline/stages.py</code>]
     FF --> OCR_PIPELINE
     
     P_A --> ASSOC[Spatial Association & Dedup<br/><code>app/services/pipeline/association.py</code>]
@@ -59,7 +57,7 @@ flowchart TD
    - Normalizes EXIF orientation and decodes the image at full camera resolution without downscaling (camera is 1080p, preserving character fidelity for weighbridge accuracy).
 
 2. **Stage 1: Vehicle Detection & Proximity Sorting** ([`app/services/detector/`](../app/services/detector/)):
-   - Runs Ultralytics YOLO26 inference via ONNX Runtime CPU (`yolo26n.onnx`, falling back to `yolo26n.pt`) to identify `car`, `bus`, `truck`, `motorcycle`, and `bicycle`.
+   - Runs Ultralytics YOLO26 inference via ONNX Runtime CPU (`yolo26n.onnx`) to identify `car`, `bus`, `truck`, `motorcycle`, and `bicycle`.
    - Extracts padded bounding box coordinates and crops for all qualified vehicles meeting confidence and area thresholds.
    - Multiple detected vehicles are sorted in proximity order (closest-first, ranked by largest bounding box area).
 
@@ -69,7 +67,6 @@ flowchart TD
    - **Tier 3 (Crop RapidOCR Fallback)**: If full-frame Fast-ALPR yields no plates, executes RapidOCR on vehicle crops with lazy CLAHE and morphological black-hat contrast enhancement for dirty or worn plates missed by Fast-ALPR. Emits recognized plates with `vehicle_box`.
    - **Tier 4 (Full-Frame RapidOCR Fallback)**: If crop RapidOCR yields no plates (or if zero vehicles were detected), executes full-frame RapidOCR as the final OCR safety net (`vehicle_box=None`).
    - **Tier 5 (Clean Empty Output & Strict Plate-Only)**: If all tiers fail to detect a plate, returns an empty array `results: []`. Unplated vehicles are omitted entirely (e.g. if $v_1$ has no plate but $v_2$ and $v_3$ do, only $2$ results are emitted).
-   - **Dual-Pass Full-Frame Pass**: When `ENABLE_FULL_FRAME_OCR=true`, full-frame OCR additionally executes to discover unlocalized or foreground plates, merging deduplicated plates into `results`.
    - **Lazy Two-Pass Contrast Enhancement**: Initial extraction runs on the raw RGB raster. If and only if no valid plate candidates are recognized, [`enhancer.py`](../app/services/ocr/enhancer.py) executes:
      1. *Bicubic Upscaling*: If $\min(w, h) < 300$, scales up to $2.0\times$ (clamped by $640 / \max(w, h, 1)$).
      2. *CLAHE*: Contrast Limited Adaptive Histogram Equalization (`clipLimit=2.5, tileGridSize=(8, 8)`).
@@ -103,7 +100,7 @@ flowchart TD
      3. *Single-Vehicle Fallback*: If only 1 vehicle exists in frame and plate has no box.
    - Unmatched plates are emitted with `vehicle_type=None`.
    - Deduplicates identical plates across crop and full-frame passes.
-   - Preserves unplated vehicles with `plate=None` when `INCLUDE_UNIDENTIFIED_VEHICLES=true` (by default `false`, only detected plates are emitted).
+   - Unplated vehicles are omitted entirely (only detected and validated plates are emitted in the response).
 
 ---
 
@@ -117,7 +114,7 @@ All service domains in `app/` strictly follow **NASA JPL Rule 4** (Holzmann's *P
 | **API Layer** | [`app/api/`](../app/api/) | `router.py`, `routes/info.py`, `routes/recognition.py`, `dependencies.py`, `errors.py`: Thin route handlers, APIRouters, dependency injection, and centralized JSON error responses. |
 | **Core Utilities** | [`app/core/`](../app/core/) | `lifespan.py` (model pre-warming), `middleware.py` (CORS, request logging, and timing headers), `contracts.py` (`require`, `ensure`), `bounds.py` (`bounded`), `config.py`, `constants.py`, `exceptions.py`, `logging.py`. |
 | **Pipeline Orchestrator** | [`app/services/pipeline/`](../app/services/pipeline/) | `orchestrator.py`, `stages.py`, `sorting.py`, `association.py`, `fallback.py`, `helpers.py`, `response.py`: Coordinates detection, stage progress logging, proximity sorting, dual-pass OCR, fallbacks, coordinate adjustments, and response packaging. |
-| **Vehicle Detector** | [`app/services/detector/`](../app/services/detector/) | `detector.py`, `geometry.py`, `occupancy.py`, `parser.py`, `constants.py`: YOLO26 model singleton, coordinate clamping/containment, human spatial partitioning, and COCO constants. |
+| **Vehicle Detector** | [`app/services/detector/`](../app/services/detector/) | `detector.py`, `geometry.py`, `parser.py`, `constants.py`: YOLO26 model singleton, coordinate clamping/containment, and COCO constants. |
 | **Image Processing** | [`app/services/image_processing/`](../app/services/image_processing/) | `loader.py`, `security.py`, `transformer.py`, `constants.py`: Polymorphic image decoding, EXIF orientation, decompression bomb defense, and permitted MIME/format constants. |
 | **Plate Recognizer** | [`app/services/ocr/`](../app/services/ocr/) | `recognizer.py`, `engine.py`, `enhancer.py`, `extractor.py`, `geometry.py`, `pairing.py`, `spatial.py`, `tokens.py`, `candidates.py`, `suppression.py`: RapidOCR ONNX inference, CLAHE/Black-Hat enhancement, 2D token pairing, Spatial NMS, and candidate selection. |
 | **Plate Rules** | [`app/services/plate_rules/`](../app/services/plate_rules/) | `states.py`, `char_maps.py`, `corrections.py`, `decals.py`, `parser.py`, `resolver.py`, `normalizers.py`, `expander.py`, `filters.py`, `bh_series.py`: Indian registration plate validation, positional OCR character substitution, decal filtering, and BH-series parsing. |

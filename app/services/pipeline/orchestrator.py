@@ -3,7 +3,6 @@
 import time
 from typing import Any
 
-from app.core.config import settings
 from app.core.logging import logger
 from app.schemas import PlateResult, RecognitionResponse
 from app.services.image_processing import decode_image
@@ -42,10 +41,9 @@ def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:
         if results := _scan_rapidocr_crops(vehicles, filename):
             logger.info(f"[pipeline] Tier 3 matched {len(results)} plate(s): {[r.plate for r in results]}")
 
-    if not results or settings.ENABLE_FULL_FRAME_OCR:
+    if not results:
         logger.info("[pipeline] Tier 4: Running Full-Frame RapidOCR fallback")
-        ff = _run_rapidocr_fullframe(prepared_img, filename)
-        return _merge_plates(results, ff) if results else ff
+        return _run_rapidocr_fullframe(prepared_img, filename)
     return results
 
 

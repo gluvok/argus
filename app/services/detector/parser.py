@@ -1,4 +1,4 @@
-"""Parse raw YOLO output arrays, clamp boxes, count humans, and sort vehicles."""
+"""Parse raw YOLO output arrays, clamp boxes, and sort vehicles."""
 
 import numpy as np
 
@@ -25,14 +25,11 @@ def parse_detections(
     xyxy: np.ndarray | None,
     width: int,
     height: int,
-    human_conf_thresh: float,
     vehicle_conf_thresh: float,
-) -> tuple[list[BoundingBox], list[tuple[str, BoundingBox]]]:
+) -> list[tuple[str, BoundingBox]]:
     """Parse raw YOLO output arrays, clamp boxes, filter candidates, and sort vehicles."""
-    human_candidates: list[BoundingBox] = []
     vehicle_candidates: list[tuple[float, int, str, BoundingBox]] = []
-    total_area = width * height
-    min_h_area, min_v_area = cc.MIN_HUMAN_BOX_AREA_RATIO * total_area, cc.MIN_VEHICLE_BOX_AREA_RATIO * total_area
+    min_v_area = cc.MIN_VEHICLE_BOX_AREA_RATIO * (width * height)
 
     for idx, (raw_cls, conf) in enumerate(bounded(list(zip(cls_ids, confs, strict=False)), dc.MAX_DETECTIONS, "detections")):
         cls_id = int(raw_cls)
@@ -42,9 +39,8 @@ def parse_detections(
             continue
         area = (box[2] - box[0]) * (box[3] - box[1])
 
-        if cls_id == dc.PERSON_CLASS_ID and conf >= human_conf_thresh and area >= min_h_area:
-            human_candidates.append(box)
-        elif cls_id in dc.VEHICLE_CLASS_NAMES and conf >= vehicle_conf_thresh and area >= min_v_area:
+        if cls_id in dc.VEHICLE_CLASS_NAMES and conf >= vehicle_conf_thresh and area >= min_v_area:
             vehicle_candidates.append((float(conf), area, dc.VEHICLE_CLASS_NAMES[cls_id], box))
 
-    return human_candidates, _dedup_vehicles(vehicle_candidates)
+    return _dedup_vehicles(vehicle_candidates)
+

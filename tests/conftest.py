@@ -6,8 +6,7 @@ from PIL import Image
 
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-os.environ["ENABLE_FULL_FRAME_OCR"] = "false"
-os.environ["INCLUDE_UNIDENTIFIED_VEHICLES"] = "false"
+os.environ["ENABLE_MULTI_VEHICLE_OCR"] = "false"
 
 try:
     import torch
@@ -56,11 +55,9 @@ def _reset_test_settings():
     """Ensure runtime settings remain strictly at their test baseline across test runs."""
     from app.core.config import settings
 
-    settings.ENABLE_FULL_FRAME_OCR = False
-    settings.INCLUDE_UNIDENTIFIED_VEHICLES = False
+    settings.ENABLE_MULTI_VEHICLE_OCR = False
     yield
-    settings.ENABLE_FULL_FRAME_OCR = False
-    settings.INCLUDE_UNIDENTIFIED_VEHICLES = False
+    settings.ENABLE_MULTI_VEHICLE_OCR = False
 
 
 _session_exitstatus = 0

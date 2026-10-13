@@ -25,7 +25,7 @@ Interactive documentation is available at [http://localhost:8000/docs](http://lo
 
 ### 2. Remote Pi Deployment (1-Command)
 
-Compiles `app` with Nuitka into a native C extension (`app.*.so`), syncs model weights (`yolo26n.onnx` / `yolo26n.pt`), purges all `.py` source files from client hardware, and configures systemd (`argus.service`) bound to `127.0.0.1:8000` with auto-restart on boot:
+Compiles `app` with Nuitka into a native C extension (`app.*.so`), syncs model weights (`yolo26n.onnx`), purges all `.py` source files from client hardware, and configures systemd (`argus.service`) bound to `127.0.0.1:8000` with auto-restart on boot:
 
 ```bash
 # Optional: re-export YOLO26 PyTorch weights to ONNX for Pi CPU acceleration

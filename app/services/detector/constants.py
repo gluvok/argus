@@ -1,7 +1,5 @@
 """Object detection and vehicle category constants for YOLO inference."""
 
-PERSON_CLASS_ID = 0
-
 VEHICLE_CLASS_NAMES: dict[int, str] = {
     1: "bicycle",
     2: "car",

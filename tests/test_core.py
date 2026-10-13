@@ -9,15 +9,13 @@ from app.core.exceptions import (
 
 
 def test_settings_default_values():
-    assert settings.ENABLE_FULL_FRAME_OCR is False
     assert settings.ENABLE_MULTI_VEHICLE_OCR is False
-    assert settings.INCLUDE_UNIDENTIFIED_VEHICLES is False
 
 
 def test_constants_default_values():
     assert constants.PROJECT_NAME == "Argus ANPR Microservice"
     assert constants.VERSION  # non-empty — exact value varies with installed package
-    assert constants.HUMAN_CONF_THRESH == 0.30
+    assert constants.YOLO_MODEL_NAME == "yolo26n.onnx"
     assert constants.VEHICLE_CONF_THRESH == 0.35
     assert constants.SERVER_HOST == "127.0.0.1"
     assert constants.SERVER_PORT == 8000
@@ -26,14 +24,10 @@ def test_constants_default_values():
 def test_settings_env_loading(monkeypatch):
     from app.core.config import Settings
 
-    monkeypatch.setenv("ENABLE_FULL_FRAME_OCR", "true")
     monkeypatch.setenv("ENABLE_MULTI_VEHICLE_OCR", "true")
-    monkeypatch.setenv("INCLUDE_UNIDENTIFIED_VEHICLES", "true")
 
     custom_settings = Settings()
-    assert custom_settings.ENABLE_FULL_FRAME_OCR is True
     assert custom_settings.ENABLE_MULTI_VEHICLE_OCR is True
-    assert custom_settings.INCLUDE_UNIDENTIFIED_VEHICLES is True
 
 
 def test_anpr_service_error():

@@ -24,7 +24,7 @@ class VehicleDetector:
         if cls._model is None:
             import app.services.detector as yf
 
-            cls._model = yf.YOLO(constants.YOLO_MODEL_NAME or "yolo26n.pt")
+            cls._model = yf.YOLO(constants.YOLO_MODEL_NAME)
         ensure(cls._model is not None, "YOLO model failed to initialise")
         return cls._model
 
@@ -37,8 +37,7 @@ class VehicleDetector:
         c_ids = boxes.cls.cpu().numpy() if hasattr(boxes.cls, "cpu") else np.asarray(boxes.cls)
         confs = boxes.conf.cpu().numpy() if hasattr(boxes.conf, "cpu") else np.asarray(boxes.conf)
         xyxy = (boxes.xyxy.cpu().numpy() if hasattr(boxes.xyxy, "cpu") else np.asarray(boxes.xyxy)) if getattr(boxes, "xyxy", None) is not None else None
-        _, vehicles = parse_detections(c_ids, confs, xyxy, img.width, img.height, 1.0, v_conf)
-        return vehicles
+        return parse_detections(c_ids, confs, xyxy, img.width, img.height, v_conf)
 
     def detect(self, image_input: ImageInput) -> DetectionResult:
         pil_img = load_rgb(image_input)
