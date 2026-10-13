@@ -202,3 +202,29 @@ def test_plate_resolver_filters_decals_and_phones():
     assert resolve_plate_from_text("GOODSCARRIER") is None
     assert resolve_plate_from_text("9414378858") is None
     assert resolve_plate_from_text("PASSING") is None
+
+
+@patch("app.services.pipeline.orchestrator.run_fast_alpr_pipeline")
+@patch("app.services.pipeline.orchestrator._scan_fast_alpr_crops")
+@patch("app.services.pipeline.VehicleDetector.detect")
+def test_cascade_stage_logging(mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes):
+    """Verify that stage and tier logging are emitted with [pipeline] prefix."""
+    from app.core.logging import logger
+
+    mock_yolo.return_value = DetectionResult(
+        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
+    )
+    mock_fast_crop.return_value = [PlateResult(plate="RJ09GA0165", vehicle_box=(10, 10, 50, 50))]
+
+    captured: list[str] = []
+    sink_id = logger.add(captured.append, format="{message}")
+    try:
+        recognize_plate_image(sample_image_bytes, filename="log_test.jpg")
+        assert any("[pipeline] Starting ANPR for 'log_test.jpg'" in msg for msg in captured)
+        assert any("[pipeline] Stage 1: Detected 1 vehicle(s)" in msg for msg in captured)
+        assert any("[pipeline] Tier 1: Scanning 1 vehicle crop(s) via Fast-ALPR" in msg for msg in captured)
+        assert any("[pipeline] Tier 1 matched 1 plate(s): ['RJ09GA0165']" in msg for msg in captured)
+        assert any("[pipeline] Finished ANPR for 'log_test.jpg': 1 plate(s) found" in msg for msg in captured)
+    finally:
+        logger.remove(sink_id)
+

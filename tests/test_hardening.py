@@ -244,6 +244,7 @@ _EXPECTED_ACTIVE_FILES = {
     "services/pipeline/helpers.py",
     "services/pipeline/orchestrator.py",
     "services/pipeline/response.py",
+    "services/pipeline/sorting.py",
     "services/pipeline/stages.py",
     "services/plate_rules/__init__.py",
     "services/plate_rules/char_maps.py",

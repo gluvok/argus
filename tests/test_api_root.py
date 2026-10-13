@@ -29,6 +29,20 @@ def test_process_time_header(client):
     assert process_time >= 0.0
 
 
+def test_request_logging(client):
+    from app.core.logging import logger
+
+    captured: list[str] = []
+    sink_id = logger.add(captured.append, format="{message}")
+    try:
+        response = client.get("/health")
+        assert response.status_code == 200
+        assert any("Incoming request: GET /health" in msg for msg in captured)
+        assert any("Completed request: GET /health -> 200" in msg for msg in captured)
+    finally:
+        logger.remove(sink_id)
+
+
 import pytest
 
 

@@ -1,4 +1,4 @@
-"""FastAPI middleware registration for CORS and request execution timing."""
+"""FastAPI middleware registration for CORS, request logging, and timing."""
 
 import time
 from typing import Any
@@ -7,10 +7,11 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core import constants
+from app.core.logging import logger
 
 
 def register_middleware(app: FastAPI) -> None:
-    """Register CORS and request timing middleware."""
+    """Register CORS, request logging, and execution timing middleware."""
     app.add_middleware(
         CORSMiddleware,
         allow_origins=constants.CORS_ORIGINS,
@@ -20,9 +21,23 @@ def register_middleware(app: FastAPI) -> None:
     )
 
     @app.middleware("http")
-    async def add_process_time_header(request: Request, call_next: Any) -> Response:
-        """Measure total HTTP request roundtrip time and set X-Process-Time-Ms header."""
+    async def log_and_time_request(request: Request, call_next: Any) -> Response:
+        """Log incoming requests, record roundtrip latency, and log completion."""
         start_time = time.perf_counter()
-        response: Response = await call_next(request)
-        response.headers["X-Process-Time-Ms"] = f"{(time.perf_counter() - start_time) * 1000:.2f}"
+        client_ip = request.client.host if request.client else "unknown"
+        query = f"?{request.url.query}" if request.url.query else ""
+        logger.info(f"Incoming request: {request.method} {request.url.path}{query} from {client_ip}")
+
+        try:
+            response: Response = await call_next(request)
+        except Exception:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            logger.error(f"Failed request: {request.method} {request.url.path}{query} after {duration_ms:.2f}ms")
+            raise
+
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        response.headers["X-Process-Time-Ms"] = f"{duration_ms:.2f}"
+        logger.info(
+            f"Completed request: {request.method} {request.url.path} -> {response.status_code} ({duration_ms:.2f}ms)"
+        )
         return response
