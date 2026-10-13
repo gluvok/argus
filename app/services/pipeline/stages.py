@@ -2,10 +2,8 @@
 
 from typing import Any
 
-from app.core.config import settings
-from app.core.exceptions import ANPRServiceError
-from app.core.logging import logger
 from app.schemas import DetectedVehicle, PlateResult
+from app.services.ocr.strategies import FastALPROCREngine, RapidOCREngine
 from app.services.pipeline.helpers import (
     _adjust_crop_coordinates,
     validate_plate_results,
@@ -23,32 +21,10 @@ def _ocr_single_vehicle(recognizer: Any, vehicle: DetectedVehicle) -> list[Plate
 
 
 def _scan_fast_alpr_crops(vehicles: list[DetectedVehicle]) -> list[PlateResult]:
-    """Tier 1: Scan each vehicle in proximity order using Fast-ALPR."""
-    from app.services.ocr.fast_alpr_runner import run_fast_alpr_on_vehicle
-
-    results, seen = [], set()
-    for v in vehicles:
-        for p in run_fast_alpr_on_vehicle(v):
-            if p.plate and p.plate != "N/A" and p.plate not in seen:
-                seen.add(p.plate), results.append(p)
-        if results and not settings.ENABLE_MULTI_VEHICLE_OCR:
-            break
-    return results
+    """Tier 1: Scan each vehicle in proximity order using Fast-ALPR strategy."""
+    return FastALPROCREngine().scan_crops(vehicles)
 
 
-def _scan_rapidocr_crops(vehicles: list[DetectedVehicle], filename: str) -> list[PlateResult]:
-    """Tier 3: Scan each vehicle in proximity order using RapidOCR."""
-    import app.services.pipeline as pl
-
-    recognizer, results, seen = pl.PlateRecognizer(), [], set()
-    try:
-        for v in vehicles:
-            for p in _ocr_single_vehicle(recognizer, v):
-                if p.plate and p.plate != "N/A" and p.plate not in seen:
-                    seen.add(p.plate), results.append(p)
-            if results and not settings.ENABLE_MULTI_VEHICLE_OCR:
-                break
-    except (ANPRServiceError, ValueError, RuntimeError, OSError, KeyError, AttributeError) as exc:
-        logger.error(f"OCR failed on '{filename}': {exc}")
-        return []
-    return results
+def _scan_rapidocr_crops(vehicles: list[DetectedVehicle], filename: str = "image.jpg") -> list[PlateResult]:
+    """Tier 3: Scan each vehicle in proximity order using RapidOCR strategy."""
+    return RapidOCREngine().scan_crops(vehicles)

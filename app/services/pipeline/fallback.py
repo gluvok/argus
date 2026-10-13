@@ -26,6 +26,6 @@ def run_full_frame_fallback(
 
 def _run_rapidocr_fullframe(image_input: ImageInput, filename: str) -> list[PlateResult]:
     """Tier 4: Execute full-frame RapidOCR fallback using default recognizer."""
-    import app.services.pipeline as pl
+    from app.services.ocr.strategies import RapidOCREngine
 
-    return run_full_frame_fallback(pl.PlateRecognizer(), image_input, filename)
+    return RapidOCREngine().scan_full_frame(image_input, filename)
