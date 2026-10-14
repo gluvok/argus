@@ -1,97 +1,64 @@
 """deploy.py — 1-command remote Pi deploy for Argus: compile, systemd, purge source."""
+
 import argparse
 import os
 import subprocess
 import sys
+from pathlib import Path
 
-TARGET = "/opt/argus"
-PORT = 8000
+_ROOT = str(Path(__file__).resolve().parent.parent)
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
-EXCLUDES = [
-    "--exclude=.venv",
-    "--exclude=.env*",
-    "--exclude=__pycache__",
-    "--exclude=.git",
-    "--exclude=tests",
-    "--exclude=docs",
-    "--exclude=debug_crops",
-    "--exclude=.cache",
-    "--exclude=.coverage",
-    "--exclude=.pytest_cache",
-    "--exclude=.ruff_cache",
-    "--exclude=compiled_dist",
-    "--exclude=dist",
-]
+from app.core.logging import logger
+from scripts.deploy_commands import (
+    EXCLUDES,
+    TARGET,
+    build_compile_cmd,
+    build_prep_cmd,
+    build_service_install_cmd,
+    generate_systemd_unit,
+)
 
 
-def log(msg: str) -> None:
-    sys.stdout.write(f"{msg}\n")
-    sys.stdout.flush()
-
-
-def run_cmd(cmd: list[str]) -> None:
+def run_cmd(cmd: list[str], dry_run: bool = False) -> None:
+    """Execute shell command or log in dry-run mode."""
+    if dry_run:
+        logger.info(f"[DRY-RUN] {' '.join(cmd)}")
+        return
     if (code := subprocess.run(cmd, check=False).returncode) != 0:
-        sys.stderr.write(f"[Deploy] Command failed: {' '.join(cmd)}\n")
+        logger.error(f"[Deploy] Command failed ({code}): {' '.join(cmd)}")
         sys.exit(code)
 
 
-def deploy_remote(host: str) -> None:
+def deploy_remote(host: str, dry_run: bool = False) -> None:
+    """Execute 4-stage deployment pipeline to remote Pi."""
     user = host.split("@")[0] if "@" in host else os.environ.get("USER", "gluvok")
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    logger.info(f"[Deploy] 1. Preparing {TARGET} on {host}...")
+    run_cmd(["ssh", "-t", host, build_prep_cmd()], dry_run)
 
-    log(f"[Deploy] 1. Preparing {TARGET} on {host}...")
-    prep = (
-        f"sudo mkdir -p {TARGET} && sudo chown -R $USER:$USER {TARGET}; "
-        f"command -v ccache >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ccache) || true; "
-        f'export PATH="$HOME/.local/bin:$PATH"; command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh'
-    )
-    run_cmd(["ssh", "-t", host, prep])
+    logger.info(f"[Deploy] 2. Syncing source & model weights to {host}:{TARGET}...")
+    run_cmd(["rsync", "-avz", "--delete", *EXCLUDES, f"{_ROOT}/", f"{host}:{TARGET}/"], dry_run)
 
-    log(f"[Deploy] 2. Syncing source & model weights to {host}:{TARGET} (excluding .env)...")
-    run_cmd(["rsync", "-avz", "--delete", *EXCLUDES, f"{repo_root}/", f"{host}:{TARGET}/"])
+    logger.info("[Deploy] 3. Compiling app module with Nuitka and purging source...")
+    run_cmd(["ssh", "-t", host, build_compile_cmd()], dry_run)
 
-    log("[Deploy] 3. Compiling app module with Nuitka and purging source...")
-    build = (
-        f'set -e; export PATH="$HOME/.local/bin:$PATH"; cd {TARGET} && uv sync && '
-        f"uv run python -m nuitka --module --include-package=app --nofollow-imports "
-        f"--remove-output --lto=yes --python-flag=no_docstrings --output-dir={TARGET}/dist app && "
-        f"mv -f {TARGET}/dist/app*so {TARGET}/ && "
-        f"printf '#!/usr/bin/env bash\\nset -e\\ncd {TARGET}\\nexec {TARGET}/.venv/bin/fastapi run --host 127.0.0.1 --port {PORT}\\n' > {TARGET}/run.sh && "
-        f"chmod +x {TARGET}/run.sh; "
-        f"rm -rf {TARGET}/app {TARGET}/dist {TARGET}/tests {TARGET}/docs {TARGET}/debug_crops {TARGET}/scripts; "
-        f"find {TARGET} -maxdepth 1 -name '*.py' -delete; "
-        f"echo '[Deploy] Source purged! Only app.*.so and run.sh remain at {TARGET}.'"
-    )
-    run_cmd(["ssh", "-t", host, build])
-
-    log("[Deploy] 4. Provisioning systemd service...")
-    svc = (
-        f"[Unit]\nDescription=Argus ANPR FastAPI Microservice\nAfter=network.target\n\n"
-        f"[Service]\nType=simple\nUser={user}\nWorkingDirectory={TARGET}\n"
-        f"ExecStart={TARGET}/run.sh\nRestart=always\nRestartSec=5\n"
-        f"Environment=PYTHONUNBUFFERED=1\n\n[Install]\nWantedBy=multi-user.target\n"
-    )
-    dist_dir = os.path.join(repo_root, "dist")
-    os.makedirs(dist_dir, exist_ok=True)
-    svc_file = os.path.join(dist_dir, "argus.service")
-    with open(svc_file, "w", encoding="utf-8") as f:
-        f.write(svc)
-
-    run_cmd(["scp", svc_file, f"{host}:/tmp/argus.service"])
-    remote_svc_cmd = (
-        "sudo mv /tmp/argus.service /etc/systemd/system/argus.service && "
-        "sudo systemctl daemon-reload && sudo systemctl enable --now argus && "
-        "sudo systemctl restart argus"
-    )
-    run_cmd(["ssh", "-t", host, remote_svc_cmd])
-    log(f"\n[Deploy] Complete! Argus active & running 24/7 on {host} at 127.0.0.1:{PORT}.")
+    logger.info("[Deploy] 4. Provisioning systemd service...")
+    dist_dir = Path(_ROOT) / "dist"
+    dist_dir.mkdir(parents=True, exist_ok=True)
+    svc_file = dist_dir / "argus.service"
+    svc_file.write_text(generate_systemd_unit(user), encoding="utf-8")
+    run_cmd(["scp", str(svc_file), f"{host}:/tmp/argus.service"], dry_run)
+    run_cmd(["ssh", "-t", host, build_service_install_cmd()], dry_run)
+    logger.info(f"[Deploy] Complete! Argus service configured on {host}.")
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Argus 1-Command Pi Deployer")
     p.add_argument("--host", default="gluvok@hermes.local", help="SSH host (e.g. gluvok@hermes.local)")
-    a = p.parse_args()
-    deploy_remote(a.host)
+    p.add_argument("--dry-run", action="store_true", help="Print commands without executing them")
+    args = p.parse_args()
+    deploy_remote(args.host, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

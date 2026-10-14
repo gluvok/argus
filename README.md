@@ -27,9 +27,11 @@ Interactive documentation is available at [http://localhost:8000/docs](http://lo
 
 Compiles `app` with Nuitka into a native C extension (`app.*.so`), syncs model weights (`yolo26n.onnx`), purges all `.py` source files from client hardware, and configures systemd (`argus.service`) bound to `127.0.0.1:8000` with auto-restart on boot:
 
-```bash
 # Optional: re-export YOLO26 PyTorch weights to ONNX for Pi CPU acceleration
 uv run python scripts/export_yolo_onnx.py
+
+# Preview deployment commands locally (dry-run)
+uv run python scripts/deploy.py --dry-run
 
 # Deploy to Raspberry Pi 5
 uv run python scripts/deploy.py --host gluvok@hermes.local
