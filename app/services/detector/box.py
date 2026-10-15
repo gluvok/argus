@@ -31,10 +31,6 @@ class BoundingBox(tuple[int, int, int, int]):
     def aspect_ratio(self) -> float:
         return (self[2] - self[0]) / max(1, self[3] - self[1])
 
-    def pad(self, width: int, height: int, padding_ratio: float = 0.03) -> BoundingBox:
-        px, py = int((self[2] - self[0]) * padding_ratio), int((self[3] - self[1]) * padding_ratio)
-        return BoundingBox(max(0, self[0] - px), max(0, self[1] - py), min(width, self[2] + px), min(height, self[3] + py))
-
     def contains(self, other: tuple[int, int, int, int], threshold: float = 0.80) -> bool:
         ix1, iy1 = max(self[0], other[0]), max(self[1], other[1])
         ix2, iy2 = min(self[2], other[2]), min(self[3], other[3])

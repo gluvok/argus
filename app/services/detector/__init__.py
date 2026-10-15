@@ -8,7 +8,6 @@ from app.services.detector.geometry import (
     box_iou,
     clamp_box,
     is_contained,
-    pad_box,
 )
 
 __all__ = [
@@ -18,7 +17,6 @@ __all__ = [
     "box_iou",
     "clamp_box",
     "is_contained",
-    "pad_box",
 ]
 
 

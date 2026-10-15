@@ -1,4 +1,4 @@
-"""Bounding box coordinate validation, clamping, padding, and containment math."""
+"""Bounding box coordinate validation, clamping, and containment math."""
 
 from typing import Any
 
@@ -29,10 +29,6 @@ def clamp_box(box: Any, width: int, height: int) -> BoundingBox | None:
     return BoundingBox(x1, y1, x2, y2)
 
 
-def pad_box(box: tuple[int, int, int, int], width: int, height: int, padding_ratio: float = 0.03) -> BoundingBox:
-    """Add a safety padding margin around a bounding box, clamped to image boundaries."""
-    return BoundingBox(*box).pad(width, height, padding_ratio)
-
 
 def is_contained(inner: tuple[int, int, int, int], outer: tuple[int, int, int, int], threshold: float = 0.80) -> bool:
     """Check if inner box is predominantly contained within outer box."""
@@ -44,6 +40,6 @@ def box_iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float
     return BoundingBox(*a).iou(b)
 
 
-__all__ = ["BoundingBox", "box_iou", "clamp_box", "is_contained", "pad_box"]
+__all__ = ["BoundingBox", "box_iou", "clamp_box", "is_contained"]
 
 

@@ -7,7 +7,7 @@ from ultralytics import YOLO
 from app.core import constants
 from app.core.contracts import ensure, require
 from app.schemas import DetectedVehicle, DetectionResult
-from app.services.detector.geometry import BoundingBox, clamp_box, pad_box
+from app.services.detector.geometry import BoundingBox, clamp_box
 from app.services.detector.parser import parse_detections
 from app.services.image_processing import ImageInput, load_rgb
 
@@ -16,7 +16,7 @@ class VehicleDetector:
     """Stage 1: YOLO26 Vehicle Detection."""
 
     _model: YOLO | None = None
-    _clamp_box, _pad_box = staticmethod(clamp_box), staticmethod(pad_box)
+    _clamp_box = staticmethod(clamp_box)
     _parse_detections = staticmethod(parse_detections)
 
     @classmethod
@@ -42,6 +42,5 @@ class VehicleDetector:
     def detect(self, image_input: ImageInput) -> DetectionResult:
         pil_img = load_rgb(image_input)
         vehicles = self._run_detection(pil_img, constants.VEHICLE_CONF_THRESH)
-        w, h = pil_img.width, pil_img.height
-        detected = [DetectedVehicle(vt, b, pil_img.crop(b.pad(w, h)), b.pad(w, h)) for vt, b in vehicles]
+        detected = [DetectedVehicle(vt, b, pil_img.crop(b), b) for vt, b in vehicles]
         return DetectionResult(vehicles=detected)

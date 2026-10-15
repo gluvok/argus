@@ -53,11 +53,6 @@ def test_bounding_box_oop_methods():
     assert box.area == 10000
     assert abs(box.aspect_ratio - 1.0) < 1e-4
 
-    # Test pad method
-    padded = box.pad(200, 200, 0.10)
-    assert padded.x1 == 0 and padded.y1 == 10
-    assert padded.x2 == 120 and padded.y2 == 130
-
     # Test contains method
     inner = BoundingBox(20, 30, 80, 90)
     assert box.contains(inner, 0.80) is True

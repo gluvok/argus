@@ -226,23 +226,6 @@ def test_candidate_ranking_prioritizes_bumper():
     assert candidates[0].info["plate"] == "MH12AB1234"
 
 
-def test_vehicle_detector_pad_box():
-    """Verify that VehicleDetector._pad_box correctly applies safety margins."""
-    from app.services.detector import VehicleDetector
-
-    # Box inside 100x100 frame
-    box = (10, 10, 60, 60)
-    padded = VehicleDetector._pad_box(box, 100, 100, padding_ratio=0.10)
-    assert padded[0] < 10
-    assert padded[1] < 10
-    assert padded[2] > 60
-    assert padded[3] > 60
-
-    # Box clamped at edges
-    edge_box = (0, 0, 100, 100)
-    padded_edge = VehicleDetector._pad_box(edge_box, 100, 100, padding_ratio=0.10)
-    assert padded_edge == (0, 0, 100, 100)
-
 
 @patch("app.services.ocr.PlateRecognizer.get_rapidocr_engine")
 def test_commercial_bus_raw_text_extracts_hr69d4793_over_antil(mock_get_engine, sample_image_bytes):
