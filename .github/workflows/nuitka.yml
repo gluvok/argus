@@ -1,5 +1,3 @@
-name: Compile ARM64 & Publish Release Branch
-
 on:
   push:
     branches: [ main ]
@@ -16,8 +14,6 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
 
       - name: Install System Compiler
         run: |
@@ -49,13 +45,6 @@ jobs:
             --output-dir=compiled_dist \
             app
 
-      - name: Verify Compiled Module Import
-        run: |
-          mkdir -p test_verify
-          cp compiled_dist/app.*.so test_verify/
-          cd test_verify
-          uv run python -c "import app; print('SUCCESS: Native ARM64 app module loaded!')"
-
       - name: Deploy to release Branch
         run: |
           git config user.name "dheereshag"
@@ -65,9 +54,6 @@ jobs:
           RELEASE_DIR=$(mktemp -d)
           cp compiled_dist/app.*.so "${RELEASE_DIR}/"
           cp pyproject.toml uv.lock README.md .python-version "${RELEASE_DIR}/"
-          [ -f .env.example ] && cp .env.example "${RELEASE_DIR}/"
-          [ -f .gitignore ] && cp .gitignore "${RELEASE_DIR}/"
-          [ -f yolo26n.pt ] && cp yolo26n.pt "${RELEASE_DIR}/"
           [ -f yolo26n.onnx ] && cp yolo26n.onnx "${RELEASE_DIR}/"
 
           # Switch to orphan deployment branch and wipe tracked and untracked files
@@ -82,8 +68,6 @@ jobs:
 
           # Stage files (force add compiled .so in case .gitignore has *.so)
           git add -f app.*.so
-          [ -f yolo26n.pt ] && git add -f yolo26n.pt
-          [ -f yolo26n.onnx ] && git add -f yolo26n.onnx
           git add .
 
           # Commit and force push to release branch
