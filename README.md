@@ -39,18 +39,24 @@ uv run python scripts/deploy.py --host gluvok@hermes.local
 
 ## ⚡ 4-Tier Cascaded Execution Pipeline
 
-1. **Tier 1 (Fast-ALPR Full-Frame)**: Direct YOLOv9-s plate detector + CCT-XS OCR with margin expansion on input image, normalized & validated against Indian MoRTH rules (`~30–40 ms`). Early exit if valid plate found.
-2. **Tier 2 (Fast-ALPR on Vehicle Crops)**: If Tier 1 produces no plates, YOLO26 vehicle detector (ONNX Runtime CPU via `yolo26n.onnx`) extracts vehicle crops $\rightarrow$ Fast-ALPR plate detection + OCR on crops (`~50–70 ms`). Early exit if valid plate found.
-3. **Tier 3 (RapidOCR on Vehicle Crops)**: If Tier 2 produces no plates, executes RapidOCR 2D spatial candidate pairing on vehicle crops (`~120–180 ms`). Early exit if valid plate found.
-4. **Tier 4 (RapidOCR Full-Frame Fallback)**: If Tier 3 produces no plates or no vehicle was detected, runs RapidOCR across the full frame (`~220–280 ms`).
+Argus uses a vehicle-first cascade. It first executes Stage 1 vehicle detection (YOLO26 ONNX Runtime CPU via `yolo26n.onnx`) and sorts vehicles by proximity:
+
+1. **Tier 1 (Fast-ALPR on Vehicle Crops)**: Runs Fast-ALPR (YOLOv9-s plate detector + CCT-XS OCR with margin expansion) on extracted vehicle crops (`~30–50 ms`). Early exit if valid plate found.
+2. **Tier 2 (Fast-ALPR Full-Frame Fallback)**: If vehicle crops yield no plates or zero vehicles were detected (e.g. non-COCO vehicles like tractors), runs Fast-ALPR across the entire image frame (`~30–50 ms`). Early exit if valid plate found.
+3. **Tier 3 (RapidOCR on Vehicle Crops)**: If Fast-ALPR passes yield no valid plates, executes RapidOCR 2D spatial candidate pairing on vehicle crops (`~120–180 ms`). Early exit if valid plate found.
+4. **Tier 4 (RapidOCR Full-Frame Fallback)**: If Tier 3 produces no plates or zero vehicles were detected, runs RapidOCR across the full image frame (`~220–280 ms`).
 
 ---
 
-## 📡 API Reference: `/recognize`
+## 📡 API Reference
 
-### Request (POST)
+### `POST /recognize`
 
-Accepts a multipart file upload (`file`, up to 8 MB):
+Recognize vehicle license plates from an uploaded image.
+
+#### Request
+
+Accepts a multipart file upload (`file`, up to 8 MB; supported: JPEG, PNG, WebP, BMP):
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/recognize" \
@@ -58,13 +64,14 @@ curl -X POST "http://127.0.0.1:8000/recognize" \
   -F "file=@tests/images/1.jpg"
 ```
 
-### Response (`200 OK`)
+#### Response (`200 OK`)
 
 ```json
 {
   "results": [
     {
       "plate": "RJ09GA0165",
+      "vehicle_box": [10, 10, 50, 50],
       "execution_time_ms": 31.42
     }
   ],
@@ -72,5 +79,45 @@ curl -X POST "http://127.0.0.1:8000/recognize" \
 }
 ```
 
-- **`results`**: List of validated plate items, each with `plate` registration number and item `execution_time_ms`.
+- **`results`**: List of validated plate items.
+  - **`plate`**: Normalized Indian vehicle registration number (e.g. `RJ09GA0165`).
+  - **`vehicle_box`**: Vehicle bounding box `[x1, y1, x2, y2]` in image coordinates, or `null` if detected via full-frame fallback.
+  - **`execution_time_ms`**: Item processing duration in milliseconds.
 - **`execution_time_ms`**: Total end-to-end processing latency in milliseconds.
+
+---
+
+### `GET /health`
+
+Health check endpoint confirming operational readiness.
+
+```bash
+curl -X GET "http://127.0.0.1:8000/health"
+```
+
+```json
+{
+  "status": "healthy",
+  "service": "Argus ANPR Microservice",
+  "version": "0.1.0"
+}
+```
+
+---
+
+### `GET /`
+
+Root service information and documentation links.
+
+```bash
+curl -X GET "http://127.0.0.1:8000/"
+```
+
+```json
+{
+  "name": "Argus ANPR Microservice",
+  "version": "0.1.0",
+  "status": "running",
+  "docs": "/docs"
+}
+```
