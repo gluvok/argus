@@ -228,3 +228,33 @@ def test_cascade_stage_logging(mock_yolo, mock_fast_crop, mock_fast_ff, sample_i
     finally:
         logger.remove(sink_id)
 
+
+def test_fast_alpr_providers_exclude_coreml():
+    """Verify _resolve_onnx_providers filters out CoreMLExecutionProvider to prevent dynamic shape failures."""
+    from app.services.ocr.fast_alpr.engine import _resolve_onnx_providers
+
+    with patch(
+        "onnxruntime.get_available_providers",
+        return_value=["CoreMLExecutionProvider", "AzureExecutionProvider", "CPUExecutionProvider"],
+    ):
+        providers = _resolve_onnx_providers()
+        assert "CoreMLExecutionProvider" not in providers
+        assert providers == ["AzureExecutionProvider", "CPUExecutionProvider"]
+
+    with patch(
+        "onnxruntime.get_available_providers",
+        return_value=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    ):
+        providers = _resolve_onnx_providers()
+        assert providers == ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+
+def test_fast_alpr_blank_frame_no_coreml_error():
+    """Verify Fast-ALPR inference on an empty image handles zero detections cleanly."""
+    from app.services.ocr.fast_alpr.runner import run_fast_alpr
+
+    blank = np.zeros((480, 640, 3), dtype=np.uint8)
+    plates = run_fast_alpr(blank)
+    assert plates == []
+
+
