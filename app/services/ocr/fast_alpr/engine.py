@@ -4,6 +4,7 @@ import threading
 from typing import Any
 
 from app.core.logging import logger
+from app.services.image_processing import make_dummy_frame
 
 _alpr_instance: Any = None
 _lock = threading.Lock()
@@ -36,10 +37,12 @@ def get_fast_alpr_engine() -> Any:
     return _alpr_instance
 
 
-def check_fast_alpr_engine() -> bool:
-    """Pre-warm and verify Fast-ALPR models during lifespan startup."""
+def warm_up_fast_alpr() -> bool:
+    """Pre-warm Fast-ALPR detector and OCR models with a synthetic crop."""
     try:
         engine = get_fast_alpr_engine()
+        if engine is not None:
+            engine.predict(make_dummy_frame(64, 128))
         return engine is not None
     except (RuntimeError, ValueError, OSError, AttributeError, ImportError) as exc:
         logger.error(f"Fast-ALPR warmup failed: {exc}")

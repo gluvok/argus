@@ -98,6 +98,44 @@ def test_yolo_singleton_initializes_once():
         VehicleDetector._model = original
 
 
+def test_vehicle_detector_warmup():
+    from app.services.detector import VehicleDetector
+
+    mock_model = MagicMock()
+    original = VehicleDetector._model
+    try:
+        VehicleDetector._model = mock_model
+        assert VehicleDetector.warm_up() is True
+        assert mock_model.call_count == 1
+    finally:
+        VehicleDetector._model = original
+
+
+def test_make_dummy_frame():
+    import numpy as np
+
+    from app.services.image_processing import make_dummy_frame
+
+    frame = make_dummy_frame(64, 128)
+    assert frame.shape == (64, 128, 3)
+    assert frame.dtype == np.uint8
+
+
+def test_ocr_engines_warmup():
+    from app.services.ocr.fast_alpr import warm_up_fast_alpr
+    from app.services.ocr.rapidocr import warm_up_rapidocr
+
+    mock_alpr = MagicMock()
+    mock_rapid = MagicMock()
+    with patch("app.services.ocr.fast_alpr.engine.get_fast_alpr_engine", return_value=mock_alpr):
+        assert warm_up_fast_alpr() is True
+        assert mock_alpr.predict.call_count == 1
+
+    with patch("app.services.ocr.rapidocr.engine.get_rapidocr_engine", return_value=mock_rapid):
+        assert warm_up_rapidocr() is True
+        assert mock_rapid.call_count == 1
+
+
 # ---------------------------------------------------------------------------
 # Parameter validation and boundary clamping
 # ---------------------------------------------------------------------------

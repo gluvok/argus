@@ -41,3 +41,8 @@ def load_rgb(image_input: ImageInput) -> Image.Image:
         raise PayloadTooLargeError(f"Image dimensions exceed permitted budget: {exc}") from exc
     except Exception as exc:
         raise InvalidImageError(f"Could not decode uploaded image: {exc}") from exc
+
+
+def make_dummy_frame(height: int, width: int) -> np.ndarray:
+    """Create a synthetic blank BGR frame for model pre-warming."""
+    return np.zeros((height, width, 3), dtype=np.uint8)

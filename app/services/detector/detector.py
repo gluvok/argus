@@ -9,7 +9,7 @@ from app.core.contracts import ensure, require
 from app.schemas import DetectedVehicle, DetectionResult
 from app.services.detector.geometry import BoundingBox, clamp_box
 from app.services.detector.parser import parse_detections
-from app.services.image_processing import ImageInput, load_rgb
+from app.services.image_processing import ImageInput, load_rgb, make_dummy_frame
 
 
 class VehicleDetector:
@@ -27,6 +27,16 @@ class VehicleDetector:
             cls._model = yf.YOLO(constants.YOLO_MODEL_NAME)
         ensure(cls._model is not None, "YOLO model failed to initialise")
         return cls._model
+
+    @classmethod
+    def warm_up(cls) -> bool:
+        """Pre-warm detector with dummy input to force backend graph compilation."""
+        try:
+            dummy = make_dummy_frame(constants.DEFAULT_YOLO_IMGSZ, constants.DEFAULT_YOLO_IMGSZ)
+            cls.get_model()(dummy, imgsz=constants.DEFAULT_YOLO_IMGSZ, verbose=False)
+            return True
+        except (RuntimeError, ValueError, OSError, AttributeError, ImportError):
+            return False
 
     def _run_detection(self, img: Image.Image, v_conf: float) -> list[tuple[str, BoundingBox]]:
         require(img is not None, "_run_detection called with no image")

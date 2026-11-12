@@ -9,9 +9,9 @@ from app.schemas import OCRToken, PlateCandidate
 from app.services.image_processing import ImageInput, load_rgb
 from app.services.ocr.extractor import extract_plates
 from app.services.ocr.rapidocr import (
-    check_rapidocr_engine,
     get_rapidocr_engine,
     run_rapidocr_inference,
+    warm_up_rapidocr,
 )
 from app.services.ocr.spatial import (
     build_spatial_pairs,
@@ -31,7 +31,7 @@ class PlateRecognizer:
     """ANPR Engine using RapidOCR ONNX Runtime with 2D spatial layout candidate pairing."""
 
     get_rapidocr_engine = staticmethod(get_rapidocr_engine)
-    check_rapidocr_engine = staticmethod(check_rapidocr_engine)
+    warm_up_rapidocr = staticmethod(warm_up_rapidocr)
     _enhance_contrast = staticmethod(enhance_contrast)
     _get_box_geometry = staticmethod(get_box_geometry)
     _get_box_centroid = staticmethod(get_box_centroid)
