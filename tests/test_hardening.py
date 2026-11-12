@@ -122,17 +122,16 @@ def test_make_dummy_frame():
 
 
 def test_ocr_engines_warmup():
-    from app.services.ocr.fast_alpr import warm_up_fast_alpr
-    from app.services.ocr.rapidocr import warm_up_rapidocr
+    from app.services.ocr import warm_up_ocr
 
     mock_alpr = MagicMock()
     mock_rapid = MagicMock()
-    with patch("app.services.ocr.fast_alpr.engine.get_fast_alpr_engine", return_value=mock_alpr):
-        assert warm_up_fast_alpr() is True
+    with (
+        patch("app.services.ocr.warmup.get_fast_alpr_engine", return_value=mock_alpr),
+        patch("app.services.ocr.warmup.get_rapidocr_engine", return_value=mock_rapid),
+    ):
+        assert warm_up_ocr() is True
         assert mock_alpr.predict.call_count == 1
-
-    with patch("app.services.ocr.rapidocr.engine.get_rapidocr_engine", return_value=mock_rapid):
-        assert warm_up_rapidocr() is True
         assert mock_rapid.call_count == 1
 
 
@@ -284,6 +283,7 @@ _EXPECTED_ACTIVE_FILES = {
     "services/ocr/strategies/__init__.py",
     "services/ocr/strategies/fast_alpr.py",
     "services/ocr/strategies/rapidocr.py",
+    "services/ocr/warmup.py",
     "services/pipeline/__init__.py",
     "services/pipeline/fallback.py",
     "services/pipeline/helpers.py",

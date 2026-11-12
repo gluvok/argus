@@ -1,12 +1,9 @@
-"""RapidOCR Model Singleton and Warmup Engine."""
+"""RapidOCR Model Singleton Engine."""
 
 import logging
 import threading
 
 from rapidocr import RapidOCR
-
-from app.core.logging import logger
-from app.services.image_processing import make_dummy_frame
 
 _rapid_logger = logging.getLogger("RapidOCR")
 _rapid_logger.setLevel(logging.ERROR)
@@ -36,14 +33,3 @@ def get_rapidocr_engine() -> RapidOCR:
                 _rapidocr_instance = RapidOCR(params=params)
     return _rapidocr_instance
 
-
-def warm_up_rapidocr() -> bool:
-    """Pre-warm RapidOCR text detection and recognition with a synthetic crop."""
-    try:
-        engine = get_rapidocr_engine()
-        if engine is not None:
-            engine(make_dummy_frame(64, 128))
-        return engine is not None
-    except (RuntimeError, ValueError, OSError, AttributeError, ImportError) as exc:
-        logger.error(f"RapidOCR warmup failed: {exc}")
-        return False

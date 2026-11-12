@@ -5,6 +5,7 @@ from app.services.ocr.protocol import OCREngine
 from app.services.ocr.recognizer import PlateRecognizer
 from app.services.ocr.spatial import suppress_overlapping_candidates
 from app.services.ocr.strategies import FastALPROCREngine, RapidOCREngine
+from app.services.ocr.warmup import warm_up_ocr
 from app.services.plate_rules import parse_plate_info
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "RapidOCREngine",
     "parse_plate_info",
     "suppress_overlapping_candidates",
+    "warm_up_ocr",
 ]
 

@@ -8,8 +8,7 @@ from fastapi import FastAPI
 from app.core import constants
 from app.core.logging import logger
 from app.services.detector import VehicleDetector
-from app.services.ocr.fast_alpr import warm_up_fast_alpr
-from app.services.ocr.rapidocr import warm_up_rapidocr
+from app.services.ocr import warm_up_ocr
 
 
 @asynccontextmanager
@@ -18,8 +17,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
     logger.info(f"Starting {constants.PROJECT_NAME} v{constants.VERSION}...")
     try:
         VehicleDetector.warm_up()
-        warm_up_fast_alpr()
-        warm_up_rapidocr()
+        warm_up_ocr()
         logger.info("AI models initialized, pre-warmed, and verified successfully.")
     except (RuntimeError, ValueError, OSError, AttributeError, ImportError) as exc:
         logger.warning(f"Non-fatal warning warming models during startup: {exc}")

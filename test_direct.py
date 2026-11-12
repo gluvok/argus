@@ -19,12 +19,10 @@ def preload_models() -> None:
     """Preload and warm up Fast-ALPR, YOLO, and RapidOCR models."""
     print("Preloading model weights and warming up inference engines...")
     from app.services.detector import VehicleDetector
-    from app.services.ocr.fast_alpr import warm_up_fast_alpr
-    from app.services.ocr.rapidocr import warm_up_rapidocr
+    from app.services.ocr import warm_up_ocr
 
     VehicleDetector.warm_up()
-    warm_up_rapidocr()
-    warm_up_fast_alpr()
+    warm_up_ocr()
 
     import cv2
 
