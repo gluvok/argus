@@ -15,7 +15,7 @@ def test_settings_default_values():
 def test_constants_default_values():
     assert constants.PROJECT_NAME == "Argus ANPR Microservice"
     assert constants.VERSION  # non-empty — exact value varies with installed package
-    assert constants.YOLO_MODEL_NAME == "yolo26n.onnx"
+    assert constants.YOLO_MODEL_NAME == "yolo26n_openvino_model"
     assert constants.VEHICLE_CONF_THRESH == 0.35
     assert constants.SERVER_HOST == "127.0.0.1"
     assert constants.SERVER_PORT == 8000

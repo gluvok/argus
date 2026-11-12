@@ -22,9 +22,16 @@ def get_rapidocr_engine() -> RapidOCR:
     if _rapidocr_instance is None:
         with _lock:
             if _rapidocr_instance is None:
-                from app.core.constants import ONNX_NUM_THREADS
+                from rapidocr import EngineType
 
-                params = {"EngineConfig.onnxruntime.intra_op_num_threads": ONNX_NUM_THREADS}
+                from app.core.constants import OPENVINO_NUM_THREADS
+
+                params = {
+                    "Det.engine_type": EngineType.OPENVINO,
+                    "Cls.engine_type": EngineType.OPENVINO,
+                    "Rec.engine_type": EngineType.OPENVINO,
+                    "EngineConfig.openvino.inference_num_threads": OPENVINO_NUM_THREADS,
+                }
                 _rapidocr_instance = RapidOCR(params=params)
     return _rapidocr_instance
 

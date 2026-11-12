@@ -25,7 +25,7 @@ Interactive documentation is available at [http://localhost:8000/docs](http://lo
 
 ### 2. Remote Pi Deployment (1-Command)
 
-Compiles `app` with Nuitka into a native C extension (`app.*.so`), syncs model weights (`yolo26n.onnx`), purges all `.py` source files from client hardware, and configures systemd (`argus.service`) bound to `127.0.0.1:8000` with auto-restart on boot:
+Compiles `app` with Nuitka into a native C extension (`app.*.so`), syncs model weights (`yolo26n_openvino_model/`), purges all `.py` source files from client hardware, and configures systemd (`argus.service`) bound to `127.0.0.1:8000` with auto-restart on boot:
 
 ```bash
 # Preview deployment commands locally (dry-run)
@@ -39,12 +39,12 @@ uv run python scripts/deploy.py --host gluvok@hermes.local
 
 ## ⚡ 4-Tier Cascaded Execution Pipeline
 
-Argus uses a vehicle-first cascade. It first executes Stage 1 vehicle detection (YOLO26 ONNX Runtime CPU via `yolo26n.onnx`) and sorts vehicles by proximity:
+Argus uses a vehicle-first cascade. It first executes Stage 1 vehicle detection (YOLO26 OpenVINO CPU via `yolo26n_openvino_model/`) and sorts vehicles by proximity:
 
 1. **Tier 1 (Fast-ALPR on Vehicle Crops)**: Runs Fast-ALPR (YOLOv9-s plate detector + CCT-XS OCR with margin expansion) on extracted vehicle crops (`~30–50 ms`). Early exit if valid plate found.
 2. **Tier 2 (Fast-ALPR Full-Frame Fallback)**: If vehicle crops yield no plates or zero vehicles were detected (e.g. non-COCO vehicles like tractors), runs Fast-ALPR across the entire image frame (`~30–50 ms`). Early exit if valid plate found.
-3. **Tier 3 (RapidOCR on Vehicle Crops)**: If Fast-ALPR passes yield no valid plates, executes RapidOCR 2D spatial candidate pairing on vehicle crops (`~120–180 ms`). Early exit if valid plate found.
-4. **Tier 4 (RapidOCR Full-Frame Fallback)**: If Tier 3 produces no plates or zero vehicles were detected, runs RapidOCR across the full image frame (`~220–280 ms`).
+3. **Tier 3 (RapidOCR on Vehicle Crops)**: If Fast-ALPR passes yield no valid plates, executes RapidOCR OpenVINO 2D spatial candidate pairing on vehicle crops (`~120–180 ms`). Early exit if valid plate found.
+4. **Tier 4 (RapidOCR Full-Frame Fallback)**: If Tier 3 produces no plates or zero vehicles were detected, runs RapidOCR OpenVINO across the full image frame (`~220–280 ms`).
 
 ---
 

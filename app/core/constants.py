@@ -19,7 +19,7 @@ CORS_ALLOW_METHODS: list[str] = ["*"]
 CORS_ALLOW_HEADERS: list[str] = ["*"]
 
 # YOLO Detection & Tuning
-YOLO_MODEL_NAME = "yolo26n.onnx"
+YOLO_MODEL_NAME = "yolo26n_openvino_model"
 YOLO_CONFIG_DIR = ".cache/ultralytics"
 VEHICLE_CONF_THRESH = 0.35
 DEFAULT_YOLO_IMGSZ = 640
@@ -31,13 +31,14 @@ VEHICLE_IOU_THRESH = 0.50
 
 # Concurrency & Engine Settings
 MAX_CONCURRENT_INFERENCES = 4
-ONNX_NUM_THREADS = 4
+OPENVINO_NUM_THREADS = 4
 
 # Image Payload & Security Limits
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 MAX_IMAGE_PIXELS = 50_000_000
 
-# Ensure Ultralytics cache directory is writable up front
+# Ensure Ultralytics and OpenVINO caches/telemetry are safely isolated
 _yolo_dir = os.path.abspath(YOLO_CONFIG_DIR)
 os.makedirs(_yolo_dir, exist_ok=True)
 os.environ["YOLO_CONFIG_DIR"] = _yolo_dir
+os.environ.setdefault("CI", "true")
