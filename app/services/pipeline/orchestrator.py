@@ -8,9 +8,8 @@ from app.schemas import PlateResult, RecognitionResponse
 from app.services.detector import VehicleDetector
 from app.services.image_processing import decode_image
 from app.services.ocr.strategies import FastALPROCREngine, RapidOCREngine
-from app.services.pipeline.helpers import _resolve_bytes
+from app.services.pipeline.helpers import _resolve_bytes, sort_by_proximity
 from app.services.pipeline.response import _build_response
-from app.services.pipeline.sorting import sort_by_proximity
 
 
 def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:

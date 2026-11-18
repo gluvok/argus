@@ -5,7 +5,13 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.core.exceptions import InvalidImageError
-from app.schemas import PlateResult
+from app.schemas import DetectedVehicle, PlateResult
+from app.services.detector.box import BoundingBox
+
+
+def sort_by_proximity(vehs: list[DetectedVehicle]) -> list[DetectedVehicle]:
+    """Sort detected vehicles by proximity (closest first, largest box area)."""
+    return sorted(vehs, key=lambda v: BoundingBox(*v.box).area, reverse=True)
 
 
 def validate_plate_results(
