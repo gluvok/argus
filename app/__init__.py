@@ -14,6 +14,7 @@ __all__ = [
     "DetectedVehicle",
     "PlateResult",
     "RecognitionResponse",
+    "app",
     "recognize_plate_image",
 ]
 
@@ -23,4 +24,8 @@ def __getattr__(name: str) -> Any:
         from app.services.pipeline.orchestrator import recognize_plate_image
 
         return recognize_plate_image
+    if name == "app":
+        from app.server import app
+
+        return app
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

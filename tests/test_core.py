@@ -90,3 +90,14 @@ def test_pil_max_image_pixels_set_at_constants_import():
         [sys.executable, "-c", code], capture_output=True, text=True, check=False
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_app_package_exports():
+    """Verify top-level package exports app and recognize_plate_image lazily."""
+    from fastapi import FastAPI
+
+    from app import app as fastapi_app
+    from app import recognize_plate_image
+
+    assert isinstance(fastapi_app, FastAPI)
+    assert callable(recognize_plate_image)
