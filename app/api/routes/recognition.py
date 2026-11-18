@@ -7,7 +7,7 @@ from fastapi import APIRouter, File, UploadFile
 
 from app.api.dependencies import InferenceSemaphore
 from app.schemas import RecognitionResponse
-from app.services.image_processing import validate_image_upload
+from app.services.image_processing import read_upload_stream, validate_image_upload
 from app.services.pipeline import recognize_plate_image
 
 router = APIRouter(tags=["Recognition"])
@@ -19,7 +19,7 @@ async def recognize_plate(
     semaphore: InferenceSemaphore,
 ) -> RecognitionResponse:
     """Process an uploaded vehicle image through the 4-Tier Cascaded ANPR Pipeline."""
-    image_bytes = await file.read()
+    image_bytes = await read_upload_stream(file)
     validate_image_upload(image_bytes, content_type=file.content_type)
     async with semaphore:
         return await asyncify(recognize_plate_image)(

@@ -61,3 +61,50 @@ def test_small_image_is_not_upscaled():
 def test_undecodable_bytes_raise_invalid_image():
     with pytest.raises(InvalidImageError):
         decode_image(b"this is not an image")
+
+
+# --------------------------------------------------------------------------
+# Streaming chunked upload guard
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_read_upload_stream_rejects_oversized_chunked():
+    """Verify stream reading halts and raises PayloadTooLargeError without buffering full payload."""
+    from app.services.image_processing.security import read_upload_stream
+
+    class MockStream:
+        def __init__(self, size_bytes: int):
+            self.remaining = size_bytes
+            self.chunk_size = 64 * 1024
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.remaining <= 0:
+                return b""
+            to_read = min(self.chunk_size, self.remaining)
+            self.remaining -= to_read
+            return b"X" * to_read
+
+    # 8MB + 128KB payload stream
+    stream = MockStream(8 * 1024 * 1024 + 128 * 1024)
+    with pytest.raises(PayloadTooLargeError, match="Image exceeds maximum permitted size"):
+        await read_upload_stream(stream, max_bytes=8 * 1024 * 1024)
+
+
+@pytest.mark.anyio
+async def test_read_upload_stream_accepts_valid_payload():
+    """Verify stream reading succeeds within permitted size limit."""
+    import io
+    from app.services.image_processing.security import read_upload_stream
+
+    class ValidStream:
+        def __init__(self, data: bytes):
+            self.buf = io.BytesIO(data)
+
+        async def read(self, size: int = -1) -> bytes:
+            return self.buf.read(size)
+
+    payload = b"TEST_IMAGE_BYTES"
+    result = await read_upload_stream(ValidStream(payload), max_bytes=1024)
+    assert result == payload
+

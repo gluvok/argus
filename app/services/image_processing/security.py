@@ -1,6 +1,7 @@
 """Image security checks, format probing, and upload validation."""
 
 import io
+from typing import Any
 
 from PIL import Image
 
@@ -49,3 +50,16 @@ def validate_image_upload(image_bytes: bytes, content_type: str | None = None) -
 
     fmt, _, _ = probe_image(image_bytes)
     return fmt
+
+
+async def read_upload_stream(file: Any, max_bytes: int = MAX_UPLOAD_BYTES) -> bytes:
+    """Read upload file in chunks, raising PayloadTooLargeError immediately if cap is exceeded."""
+    chunk_size = 64 * 1024
+    buffer = bytearray()
+    while chunk := await file.read(chunk_size):
+        buffer.extend(chunk)
+        if len(buffer) > max_bytes:
+            limit_mb = max_bytes // (1024 * 1024)
+            raise PayloadTooLargeError(f"Image exceeds maximum permitted size of {limit_mb} MB.")
+    return bytes(buffer)
+
