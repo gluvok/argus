@@ -1,5 +1,6 @@
 """ANPR Pipeline Orchestrator: vehicle-first 5-tier cascaded fallback."""
 
+import threading
 import time
 from typing import Any
 
@@ -10,6 +11,8 @@ from app.services.image_processing import decode_image
 from app.services.ocr.strategies import FastALPROCREngine, RapidOCREngine
 from app.services.pipeline.helpers import _resolve_bytes, sort_by_proximity
 from app.services.pipeline.response import _build_response
+
+_inference_lock = threading.Lock()
 
 
 def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:
@@ -70,6 +73,7 @@ def recognize_plate_image(
         filename or (image_input if isinstance(image_input, str) else "image.jpg"),
     )
     logger.info(f"[pipeline] Starting ANPR for '{fn}'")
-    plates = _execute_cascade(decode_image(_resolve_bytes(image_input)), fn)
+    with _inference_lock:
+        plates = _execute_cascade(decode_image(_resolve_bytes(image_input)), fn)
     logger.info(f"[pipeline] Finished ANPR for '{fn}': {len(plates)} plate(s) found")
     return _build_response(plates, start_time)
