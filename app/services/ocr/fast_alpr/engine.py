@@ -23,13 +23,17 @@ def get_fast_alpr_engine() -> Any:
         with _lock:
             if _alpr_instance is None:
                 from fast_alpr import ALPR
+                from open_image_models import create_detector
 
                 logger.info("Initializing Fast-ALPR ONNX models...")
                 providers = _resolve_onnx_providers()
+                detector = create_detector(
+                    "yolo-v9-s-608-license-plate-end2end",
+                    conf_thresh=0.25,
+                    providers=providers,
+                )
                 _alpr_instance = ALPR(
-                    detector_model="yolo-v9-s-608-license-plate-end2end",
-                    detector_conf_thresh=0.25,
-                    detector_providers=providers,
+                    detector=detector,
                     ocr_model="cct-xs-v2-global-model",
                     ocr_providers=providers,
                 )
