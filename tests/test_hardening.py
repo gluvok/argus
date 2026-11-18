@@ -48,7 +48,9 @@ def test_contracts_survive_optimised_mode():
         text=True,
         check=False,
     )
-    assert "RAISED" in result.stdout, "contract check did not fire under -O; it has regressed to assert semantics"
+    assert "RAISED" in result.stdout, (
+        "contract check did not fire under -O; it has regressed to assert semantics"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -143,16 +145,28 @@ def test_ocr_engines_warmup():
 def test_out_of_bounds_box_is_clamped():
     from app.services.detector import VehicleDetector
 
-    assert VehicleDetector._clamp_box((-50, -50, 5000, 5000), 640, 480) == (0, 0, 640, 480)
+    assert VehicleDetector._clamp_box((-50, -50, 5000, 5000), 640, 480) == (
+        0,
+        0,
+        640,
+        480,
+    )
 
 
 def test_corner_swapped_box_is_repaired():
     from app.services.detector import VehicleDetector
 
-    assert VehicleDetector._clamp_box((300, 200, 100, 50), 640, 480) == (100, 50, 300, 200)
+    assert VehicleDetector._clamp_box((300, 200, 100, 50), 640, 480) == (
+        100,
+        50,
+        300,
+        200,
+    )
 
 
-@pytest.mark.parametrize("bad", [None, (), (1, 2), (0, 0, 2, 2), "nope", (0, 0, "x", 4)])
+@pytest.mark.parametrize(
+    "bad", [None, (), (1, 2), (0, 0, 2, 2), "nope", (0, 0, "x", 4)]
+)
 def test_unusable_boxes_are_rejected_not_cropped(bad):
     from app.services.detector import VehicleDetector
 
@@ -336,4 +350,3 @@ def test_public_package_exports_are_live():
     for name in app.__all__:
         assert hasattr(app, name), f"Export {name} is dead or missing from app"
         assert getattr(app, name) is not None
-

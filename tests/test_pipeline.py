@@ -42,9 +42,13 @@ def test_recognize_no_vehicle_no_plate(mock_yolo, mock_ocr_cls, sample_image_byt
 
     response = recognize_plate_image(sample_image_bytes, filename="scenery.jpg")
     assert response.results == []
+
+
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_recognize_multiple_vehicles_success(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_recognize_multiple_vehicles_success(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     crop_car = Image.new("RGB", (60, 60))
     crop_truck = Image.new("RGB", (80, 80))
     mock_yolo.return_value = DetectionResult(
@@ -73,7 +77,9 @@ def test_recognize_multiple_vehicles_success(mock_yolo, mock_ocr_cls, sample_ima
     mock_ocr_cls.return_value = mock_ocr
 
     with patch.object(settings, "ENABLE_MULTI_VEHICLE_OCR", True):
-        response = recognize_plate_image(sample_image_bytes, filename="multi_vehicles.jpg")
+        response = recognize_plate_image(
+            sample_image_bytes, filename="multi_vehicles.jpg"
+        )
         assert len(response.results) == 2
         assert response.results[0].plate == "DL01AB1234"
         assert response.results[1].plate == "MH12CD5678"
@@ -109,7 +115,9 @@ def test_recognize_vehicle_cropped(mock_yolo, mock_ocr_cls, sample_image_bytes):
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_recognize_no_vehicle_detected_full_frame(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_recognize_no_vehicle_detected_full_frame(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     mock_yolo.return_value = DetectionResult(
         vehicles=[],
     )
@@ -148,14 +156,18 @@ def test_validate_plate_results():
     assert validate_plate_results(None) == []
     assert validate_plate_results("invalid") == []
 
-    results = validate_plate_results([{"plate": 123}, {"plate": "DL01AB1234", "state": "Delhi"}])
+    results = validate_plate_results(
+        [{"plate": 123}, {"plate": "DL01AB1234", "state": "Delhi"}]
+    )
     assert len(results) == 1
     assert results[0].plate == "DL01AB1234"
 
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_ocr_crop_fallback_and_error_handling(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_ocr_crop_fallback_and_error_handling(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     from app.core.exceptions import ANPRServiceError
 
     dummy_crop = Image.new("RGB", (50, 50))
@@ -215,7 +227,9 @@ def test_unread_vehicle_plate_is_none(mock_yolo, mock_ocr_cls, sample_image_byte
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_recognize_no_vehicle_detected_multiple_plates_fallback(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_recognize_no_vehicle_detected_multiple_plates_fallback(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     mock_yolo.return_value = DetectionResult(
         vehicles=[],
     )
@@ -228,14 +242,22 @@ def test_recognize_no_vehicle_detected_multiple_plates_fallback(mock_yolo, mock_
     ]
     mock_ocr_cls.return_value = mock_ocr
 
-    response = recognize_plate_image(sample_image_bytes, filename="multiple_plates_fallback.jpg")
+    response = recognize_plate_image(
+        sample_image_bytes, filename="multiple_plates_fallback.jpg"
+    )
     assert len(response.results) == 3
-    assert [r.plate for r in response.results] == ["DL01AB1234", "MH12AB1234", "RJ09GA0165"]
+    assert [r.plate for r in response.results] == [
+        "DL01AB1234",
+        "MH12AB1234",
+        "RJ09GA0165",
+    ]
 
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_recognize_single_vehicle_multiple_plates(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_recognize_single_vehicle_multiple_plates(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     dummy_crop = Image.new("RGB", (100, 100))
     detection = DetectionResult(
         vehicles=[
@@ -263,7 +285,9 @@ def test_recognize_single_vehicle_multiple_plates(mock_yolo, mock_ocr_cls, sampl
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_dual_pass_background_vehicle_and_foreground_plate(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_dual_pass_background_vehicle_and_foreground_plate(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """Test where background truck has no plate, but full-frame finds a plate outside."""
     dummy_crop = Image.new("RGB", (40, 40))
     detection = DetectionResult(
@@ -281,7 +305,9 @@ def test_dual_pass_background_vehicle_and_foreground_plate(mock_yolo, mock_ocr_c
     mock_ocr = MagicMock()
     mock_ocr.recognize.side_effect = [
         [],  # Crop OCR: no plate found on truck
-        [{"plate": "BP2A4904", "state": None, "box": (60, 60, 95, 80)}],  # Full frame: plate outside
+        [
+            {"plate": "BP2A4904", "state": None, "box": (60, 60, 95, 80)}
+        ],  # Full frame: plate outside
     ]
     mock_ocr_cls.return_value = mock_ocr
 
@@ -333,14 +359,18 @@ def test_recognize_motorcycle_and_bicycle(mock_yolo, mock_ocr_cls, sample_image_
         [],
     ]
     with patch.object(settings, "ENABLE_MULTI_VEHICLE_OCR", True):
-        resp_all = recognize_plate_image(sample_image_bytes, filename="two_wheelers.jpg")
+        resp_all = recognize_plate_image(
+            sample_image_bytes, filename="two_wheelers.jpg"
+        )
         assert len(resp_all.results) == 1
-        assert resp_all.results[0].plate == "MH14AB1234" 
+        assert resp_all.results[0].plate == "MH14AB1234"
 
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_close_up_vehicle_bumper_plate_association(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_close_up_vehicle_bumper_plate_association(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """Test close-up vehicle (3.jpg scenario) where box cuts off above bumper but plate aligns in column."""
     dummy_crop = Image.new("RGB", (1265, 534))
     detection = DetectionResult(
@@ -375,7 +405,9 @@ def test_close_up_vehicle_bumper_plate_association(mock_yolo, mock_ocr_cls, samp
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_full_frame_ocr_disabled_skips_secondary_pass(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_full_frame_ocr_disabled_skips_secondary_pass(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """When crop OCR succeeds, secondary full-frame pass is skipped."""
     dummy_crop = Image.new("RGB", (40, 40))
     mock_yolo.return_value = DetectionResult(
@@ -389,7 +421,9 @@ def test_full_frame_ocr_disabled_skips_secondary_pass(mock_yolo, mock_ocr_cls, s
         ],
     )
     mock_ocr = MagicMock()
-    mock_ocr.recognize.return_value = [{"plate": "KA01AB1234", "state": "Karnataka", "box": (5, 5, 35, 25)}]
+    mock_ocr.recognize.return_value = [
+        {"plate": "KA01AB1234", "state": "Karnataka", "box": (5, 5, 35, 25)}
+    ]
     mock_ocr_cls.return_value = mock_ocr
 
     resp = recognize_plate_image(sample_image_bytes, filename="single_car.jpg")
@@ -400,13 +434,17 @@ def test_full_frame_ocr_disabled_skips_secondary_pass(mock_yolo, mock_ocr_cls, s
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_full_frame_ocr_disabled_still_runs_zero_vehicle_fallback(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_full_frame_ocr_disabled_still_runs_zero_vehicle_fallback(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """When 0 vehicles are detected, fallback full-frame OCR still runs."""
     mock_yolo.return_value = DetectionResult(
         vehicles=[],
     )
     mock_ocr = MagicMock()
-    mock_ocr.recognize.return_value = [{"plate": "KA01AB1234", "state": "Karnataka", "box": (5, 5, 35, 25)}]
+    mock_ocr.recognize.return_value = [
+        {"plate": "KA01AB1234", "state": "Karnataka", "box": (5, 5, 35, 25)}
+    ]
     mock_ocr_cls.return_value = mock_ocr
 
     resp = recognize_plate_image(sample_image_bytes, filename="bumper_only.jpg")
@@ -417,7 +455,9 @@ def test_full_frame_ocr_disabled_still_runs_zero_vehicle_fallback(mock_yolo, moc
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_vehicles_detected_none_plated_triggers_full_frame_fallback(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_vehicles_detected_none_plated_triggers_full_frame_fallback(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """When vehicles are detected and none have plates on crop, full-frame OCR fallback triggers."""
     dummy_crop = Image.new("RGB", (60, 60))
     mock_yolo.return_value = DetectionResult(
@@ -446,7 +486,9 @@ def test_vehicles_detected_none_plated_triggers_full_frame_fallback(mock_yolo, m
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_vehicles_detected_one_plated_skips_full_frame(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_vehicles_detected_one_plated_skips_full_frame(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """When multiple vehicles are detected and at least one has a plate, full-frame OCR is skipped."""
     dummy_crop = Image.new("RGB", (50, 50))
     mock_yolo.return_value = DetectionResult(
@@ -486,20 +528,40 @@ def test_vehicles_detected_one_plated_skips_full_frame(mock_yolo, mock_ocr_cls, 
         [],
     ]
     with patch.object(settings, "ENABLE_MULTI_VEHICLE_OCR", True):
-        resp_multi = recognize_plate_image(sample_image_bytes, filename="two_vehicles.jpg")
+        resp_multi = recognize_plate_image(
+            sample_image_bytes, filename="two_vehicles.jpg"
+        )
         assert mock_ocr.recognize.call_count == 2
         assert len(resp_multi.results) == 1
 
+
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_closest_vehicle_fallback_to_second_closest(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_closest_vehicle_fallback_to_second_closest(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """When closest vehicle has no plate, fall through to next closest vehicle and skip third."""
     dummy_crop = Image.new("RGB", (50, 50))
     mock_yolo.return_value = DetectionResult(
         vehicles=[
-            DetectedVehicle(vehicle_type="car", box=(0, 0, 100, 100), crop=dummy_crop, crop_box=(0, 0, 100, 100)),
-            DetectedVehicle(vehicle_type="truck", box=(0, 0, 80, 80), crop=dummy_crop, crop_box=(0, 0, 80, 80)),
-            DetectedVehicle(vehicle_type="bus", box=(0, 0, 50, 50), crop=dummy_crop, crop_box=(0, 0, 50, 50)),
+            DetectedVehicle(
+                vehicle_type="car",
+                box=(0, 0, 100, 100),
+                crop=dummy_crop,
+                crop_box=(0, 0, 100, 100),
+            ),
+            DetectedVehicle(
+                vehicle_type="truck",
+                box=(0, 0, 80, 80),
+                crop=dummy_crop,
+                crop_box=(0, 0, 80, 80),
+            ),
+            DetectedVehicle(
+                vehicle_type="bus",
+                box=(0, 0, 50, 50),
+                crop=dummy_crop,
+                crop_box=(0, 0, 50, 50),
+            ),
         ],
     )
     mock_ocr = MagicMock()
@@ -518,12 +580,19 @@ def test_closest_vehicle_fallback_to_second_closest(mock_yolo, mock_ocr_cls, sam
 
 @patch("app.services.pipeline.PlateRecognizer")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_unplated_vehicle_returns_empty_results(mock_yolo, mock_ocr_cls, sample_image_bytes):
+def test_unplated_vehicle_returns_empty_results(
+    mock_yolo, mock_ocr_cls, sample_image_bytes
+):
     """Verify that unplated vehicles produce empty results list."""
     crop = Image.new("RGB", (30, 30))
     mock_yolo.return_value = DetectionResult(
         vehicles=[
-            DetectedVehicle(vehicle_type="bus", box=(0, 0, 30, 30), crop=crop, crop_box=(0, 0, 30, 30)),
+            DetectedVehicle(
+                vehicle_type="bus",
+                box=(0, 0, 30, 30),
+                crop=crop,
+                crop_box=(0, 0, 30, 30),
+            ),
         ],
     )
     mock_ocr = MagicMock()

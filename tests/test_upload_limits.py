@@ -36,7 +36,9 @@ def test_pixel_budget_is_enforced(monkeypatch):
     A small file can declare enormous dimensions. Guard on the pixel count from
     the header, before the full decode allocates anything.
     """
-    monkeypatch.setattr("app.services.image_processing.transformer.MAX_IMAGE_PIXELS", 1000)
+    monkeypatch.setattr(
+        "app.services.image_processing.transformer.MAX_IMAGE_PIXELS", 1000
+    )
     with pytest.raises(PayloadTooLargeError):
         decode_image(_jpeg(200, 200))
 
@@ -87,7 +89,9 @@ async def test_read_upload_stream_rejects_oversized_chunked():
 
     # 8MB + 128KB payload stream
     stream = MockStream(8 * 1024 * 1024 + 128 * 1024)
-    with pytest.raises(PayloadTooLargeError, match="Image exceeds maximum permitted size"):
+    with pytest.raises(
+        PayloadTooLargeError, match="Image exceeds maximum permitted size"
+    ):
         await read_upload_stream(stream, max_bytes=8 * 1024 * 1024)
 
 
@@ -95,6 +99,7 @@ async def test_read_upload_stream_rejects_oversized_chunked():
 async def test_read_upload_stream_accepts_valid_payload():
     """Verify stream reading succeeds within permitted size limit."""
     import io
+
     from app.services.image_processing.security import read_upload_stream
 
     class ValidStream:
@@ -107,4 +112,3 @@ async def test_read_upload_stream_accepts_valid_payload():
     payload = b"TEST_IMAGE_BYTES"
     result = await read_upload_stream(ValidStream(payload), max_bytes=1024)
     assert result == payload
-

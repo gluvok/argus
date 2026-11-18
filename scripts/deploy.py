@@ -38,7 +38,10 @@ def deploy_remote(host: str, dry_run: bool = False) -> None:
     run_cmd(["ssh", "-t", host, build_prep_cmd()], dry_run)
 
     logger.info(f"[Deploy] 2. Syncing source & model weights to {host}:{TARGET}...")
-    run_cmd(["rsync", "-avz", "--delete", *EXCLUDES, f"{_ROOT}/", f"{host}:{TARGET}/"], dry_run)
+    run_cmd(
+        ["rsync", "-avz", "--delete", *EXCLUDES, f"{_ROOT}/", f"{host}:{TARGET}/"],
+        dry_run,
+    )
 
     logger.info("[Deploy] 3. Compiling app module with Nuitka and purging source...")
     run_cmd(["ssh", "-t", host, build_compile_cmd()], dry_run)
@@ -55,8 +58,14 @@ def deploy_remote(host: str, dry_run: bool = False) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Argus 1-Command Pi Deployer")
-    p.add_argument("--host", default="gluvok@hermes.local", help="SSH host (e.g. gluvok@hermes.local)")
-    p.add_argument("--dry-run", action="store_true", help="Print commands without executing them")
+    p.add_argument(
+        "--host",
+        default="gluvok@hermes.local",
+        help="SSH host (e.g. gluvok@hermes.local)",
+    )
+    p.add_argument(
+        "--dry-run", action="store_true", help="Print commands without executing them"
+    )
     args = p.parse_args()
     deploy_remote(args.host, dry_run=args.dry_run)
 

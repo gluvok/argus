@@ -34,7 +34,9 @@ def collect_candidates(
                 continue
             seen.add(info["plate"])
             info.update({"raw_text": raw_summary, "confidence": conf, "box": box})
-            candidates.append(PlateCandidate(y_pos=y, rank=rank, info=info, confidence=conf, box=box))
+            candidates.append(
+                PlateCandidate(y_pos=y, rank=rank, info=info, confidence=conf, box=box)
+            )
 
     for tok in clean_tokens:
         _eval(tok.text, [tok], tok.cy or 0.0)
@@ -42,7 +44,11 @@ def collect_candidates(
         if len(line) > 1:
             _eval("".join(t.text for t in line), line, line[0].cy or 0.0)
     for i in range(len(lines) - 1):
-        _eval("".join(t.text for t in lines[i]) + "".join(t.text for t in lines[i + 1]), lines[i] + lines[i + 1], lines[i][0].cy or 0.0)
+        _eval(
+            "".join(t.text for t in lines[i]) + "".join(t.text for t in lines[i + 1]),
+            lines[i] + lines[i + 1],
+            lines[i][0].cy or 0.0,
+        )
     for _, p_text, y, p_toks in pairs:
         _eval(p_text, p_toks, y)
     return candidates

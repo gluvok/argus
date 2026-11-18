@@ -84,8 +84,12 @@ def _build_summary_markdown(
         "|---|---|---|---|---|",
     ]
     for r in rows:
-        plates_str = ", ".join(f"`{p}`" for p in r["plates"]) if r["plates"] else "*None*"
-        lines.append(f"| {r['index']} | `{r['filename']}` | {plates_str} | {r['latency']:.2f} | {r['tier']} |")
+        plates_str = (
+            ", ".join(f"`{p}`" for p in r["plates"]) if r["plates"] else "*None*"
+        )
+        lines.append(
+            f"| {r['index']} | `{r['filename']}` | {plates_str} | {r['latency']:.2f} | {r['tier']} |"
+        )
 
     return "\n".join(lines) + "\n"
 
@@ -100,8 +104,16 @@ def generate_report(records: list[dict[str, Any]], total_wall: float) -> str:
     total_plates = sum(len(r["plates"]) for r in records)
     total_imgs = len(records)
 
-    p95 = statistics.quantiles(latencies, n=20)[18] if len(latencies) >= 20 else max(latencies)
-    p99 = statistics.quantiles(latencies, n=100)[98] if len(latencies) >= 100 else max(latencies)
+    p95 = (
+        statistics.quantiles(latencies, n=20)[18]
+        if len(latencies) >= 20
+        else max(latencies)
+    )
+    p99 = (
+        statistics.quantiles(latencies, n=100)[98]
+        if len(latencies) >= 100
+        else max(latencies)
+    )
 
     stats = {
         "total": total_imgs,
@@ -127,7 +139,11 @@ def generate_report(records: list[dict[str, Any]], total_wall: float) -> str:
 
     for r in records:
         lat = r["latency"]
-        r["tier"] = "Fast-ALPR (≤50ms)" if lat <= 50.0 else ("Crop (50-200ms)" if lat <= 200.0 else "RapidOCR (>200ms)")
+        r["tier"] = (
+            "Fast-ALPR (≤50ms)"
+            if lat <= 50.0
+            else ("Crop (50-200ms)" if lat <= 200.0 else "RapidOCR (>200ms)")
+        )
 
     report_md = _build_summary_markdown(stats, tier_counts, records)
     with open(REPORT_FILE, "w") as f:
@@ -135,12 +151,16 @@ def generate_report(records: list[dict[str, Any]], total_wall: float) -> str:
 
     print(f"\n{'=' * 60}\nBENCHMARK SUMMARY REPORT\n{'=' * 60}")
     print(f"Total Images:     {stats['total']}")
-    print(f"Plates Found:     {stats['total_plates']} across {stats['with_plates']} images ({stats['detection_rate']:.1f}% hit rate)")
+    print(
+        f"Plates Found:     {stats['total_plates']} across {stats['with_plates']} images ({stats['detection_rate']:.1f}% hit rate)"
+    )
     print(f"Mean Latency:     {stats['mean_lat']:.2f} ms")
     print(f"Median (P50):     {stats['med_lat']:.2f} ms")
     print(f"95th Percentile:  {stats['p95_lat']:.2f} ms")
     print(f"Min / Max:        {stats['min_lat']:.2f} ms / {stats['max_lat']:.2f} ms")
-    print(f"Fast-ALPR Ratio:  {tier_counts['fast']}/{stats['total']} ({tier_counts['fast'] / stats['total'] * 100:.1f}%)")
+    print(
+        f"Fast-ALPR Ratio:  {tier_counts['fast']}/{stats['total']} ({tier_counts['fast'] / stats['total'] * 100:.1f}%)"
+    )
     print(f"Report saved to:  {REPORT_FILE}\n{'=' * 60}\n")
 
     return report_md
@@ -164,13 +184,17 @@ def test_models() -> list[RecognitionResponse]:
         resp = recognize_plate_image(img_path, filename=filename)
         responses.append(resp)
         plate_nums = [r.plate for r in resp.results]
-        records.append({
-            "index": idx,
-            "filename": filename,
-            "plates": plate_nums,
-            "latency": resp.execution_time_ms,
-        })
-        print(f"[{idx:02d}/{len(image_paths)}] {filename:10} -> {plate_nums or ['None']} ({resp.execution_time_ms:.2f} ms)")
+        records.append(
+            {
+                "index": idx,
+                "filename": filename,
+                "plates": plate_nums,
+                "latency": resp.execution_time_ms,
+            }
+        )
+        print(
+            f"[{idx:02d}/{len(image_paths)}] {filename:10} -> {plate_nums or ['None']} ({resp.execution_time_ms:.2f} ms)"
+        )
 
     total_wall = time.time() - start_wall
     generate_report(records, total_wall)

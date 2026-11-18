@@ -28,24 +28,35 @@ def create_error_response(
         details=details,
         timestamp=datetime.now(UTC),
     )
-    return JSONResponse(status_code=status_code, content=payload.model_dump(mode="json"))
+    return JSONResponse(
+        status_code=status_code, content=payload.model_dump(mode="json")
+    )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register custom exception handlers mapping errors to standardized APIErrorResponse."""
+
     @app.exception_handler(ANPRServiceError)
     async def handle_anpr_error(_: Request, exc: ANPRServiceError) -> JSONResponse:
-        return create_error_response(exc.status_code, exc.message, exc.__class__.__name__)
+        return create_error_response(
+            exc.status_code, exc.message, exc.__class__.__name__
+        )
 
     @app.exception_handler(ContractViolation)
     async def handle_contract_error(_: Request, exc: ContractViolation) -> JSONResponse:
-        return create_error_response(500, "Internal assertion failed.", "ContractViolation", str(exc))
+        return create_error_response(
+            500, "Internal assertion failed.", "ContractViolation", str(exc)
+        )
 
     @app.exception_handler(RequestValidationError)
     async def handle_val_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-        return create_error_response(422, "Request validation error.", "RequestValidationError", exc.errors())
+        return create_error_response(
+            422, "Request validation error.", "RequestValidationError", exc.errors()
+        )
 
     @app.exception_handler(Exception)
     async def handle_generic_error(req: Request, exc: Exception) -> JSONResponse:
         logger.exception(f"Unhandled server error on {req.url.path}: {exc}")
-        return create_error_response(500, "An internal server error occurred.", "InternalServerError")
+        return create_error_response(
+            500, "An internal server error occurred.", "InternalServerError"
+        )

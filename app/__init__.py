@@ -24,4 +24,3 @@ def __getattr__(name: str) -> Any:
 
         return recognize_plate_image
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-

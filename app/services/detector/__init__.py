@@ -18,5 +18,3 @@ __all__ = [
     "clamp_box",
     "is_contained",
 ]
-
-

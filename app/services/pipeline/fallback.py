@@ -19,6 +19,13 @@ def run_full_frame_fallback(
     try:
         raw = recognizer.recognize(image_input)
         return validate_plate_results(raw)
-    except (ANPRServiceError, ValueError, RuntimeError, OSError, KeyError, AttributeError) as exc:
+    except (
+        ANPRServiceError,
+        ValueError,
+        RuntimeError,
+        OSError,
+        KeyError,
+        AttributeError,
+    ) as exc:
         logger.error(f"Full-frame OCR failed on '{filename}': {exc}")
         return []

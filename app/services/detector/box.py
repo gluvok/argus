@@ -31,7 +31,9 @@ class BoundingBox(tuple[int, int, int, int]):
     def aspect_ratio(self) -> float:
         return (self[2] - self[0]) / max(1, self[3] - self[1])
 
-    def contains(self, other: tuple[int, int, int, int], threshold: float = 0.80) -> bool:
+    def contains(
+        self, other: tuple[int, int, int, int], threshold: float = 0.80
+    ) -> bool:
         ix1, iy1 = max(self[0], other[0]), max(self[1], other[1])
         ix2, iy2 = min(self[2], other[2]), min(self[3], other[3])
         if ix2 <= ix1 or iy2 <= iy1:
@@ -46,5 +48,9 @@ class BoundingBox(tuple[int, int, int, int]):
         if ix2 <= ix1 or iy2 <= iy1:
             return 0.0
         inter = (ix2 - ix1) * (iy2 - iy1)
-        union = self.area + max(0, other[2] - other[0]) * max(0, other[3] - other[1]) - inter
+        union = (
+            self.area
+            + max(0, other[2] - other[0]) * max(0, other[3] - other[1])
+            - inter
+        )
         return inter / max(1, union)

@@ -17,9 +17,13 @@ def enhance_contrast(img: Image.Image) -> Image.Image:
     if min(w, h) < 300:
         scale = min(2.0, 640.0 / max(w, h, 1))
         if scale > 1.05:
-            np_img = cv2.resize(np_img, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+            np_img = cv2.resize(
+                np_img, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC
+            )
 
-    gray = cv2.cvtColor(np_img, cv2.COLOR_RGB2GRAY) if len(np_img.shape) == 3 else np_img
+    gray = (
+        cv2.cvtColor(np_img, cv2.COLOR_RGB2GRAY) if len(np_img.shape) == 3 else np_img
+    )
     clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
     cl = clahe.apply(gray)
 
@@ -37,7 +41,9 @@ def enhance_contrast(img: Image.Image) -> Image.Image:
 def retry_contrast(recognizer: Any, img: Image.Image) -> list[dict[str, Any]] | None:
     """Attempt contrast-enhanced OCR pass when initial extraction yields no plate."""
     try:
-        enh = recognizer._extract_plates_from_image_array(recognizer._enhance_contrast(img))
+        enh = recognizer._extract_plates_from_image_array(
+            recognizer._enhance_contrast(img)
+        )
         if any(r.get("plate") and r.get("plate") != "N/A" for r in enh) or enh:
             return enh
     except (cv2.error, ValueError, RuntimeError, OSError, TypeError) as e:

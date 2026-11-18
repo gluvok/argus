@@ -31,4 +31,9 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.server:app", host=constants.SERVER_HOST, port=constants.SERVER_PORT, reload=True)
+    uvicorn.run(
+        "app.server:app",
+        host=constants.SERVER_HOST,
+        port=constants.SERVER_PORT,
+        reload=True,
+    )

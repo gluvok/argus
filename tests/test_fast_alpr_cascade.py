@@ -27,9 +27,17 @@ def test_cascade_tier1_crop_fast_alpr_early_exit(
 ):
     """Tier 1: Vehicle detected and crop Fast-ALPR finds plate; full-frame is skipped."""
     mock_yolo.return_value = DetectionResult(
-        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
+        vehicles=[
+            DetectedVehicle(
+                vehicle_type="car",
+                box=(10, 10, 50, 50),
+                crop=Image.new("RGB", (40, 40)),
+            )
+        ]
     )
-    mock_fast_crop.return_value = [PlateResult(plate="RJ09GA0165", vehicle_box=(10, 10, 50, 50))]
+    mock_fast_crop.return_value = [
+        PlateResult(plate="RJ09GA0165", vehicle_box=(10, 10, 50, 50))
+    ]
 
     resp = recognize_plate_image(sample_image_bytes, filename="clear_plate.jpg")
 
@@ -83,7 +91,13 @@ def test_cascade_tier2_crop_miss_full_frame_fast_alpr(
 ):
     """Tier 2: Crop Fast-ALPR misses, full-frame Fast-ALPR succeeds."""
     mock_yolo.return_value = DetectionResult(
-        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
+        vehicles=[
+            DetectedVehicle(
+                vehicle_type="car",
+                box=(10, 10, 50, 50),
+                crop=Image.new("RGB", (40, 40)),
+            )
+        ]
     )
     mock_fast_crop.return_value = []
     mock_fast_ff.return_value = [PlateResult(plate="MH12AB1234", vehicle_box=None)]
@@ -120,15 +134,28 @@ def test_cascade_tier2_tractor_zero_vehicle_fast_alpr(
 @patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier3_crop_rapidocr_fallback(
-    mock_yolo, mock_fast_crop, mock_fast_ff, mock_rapid_crop, mock_rapid_ff, sample_image_bytes
+    mock_yolo,
+    mock_fast_crop,
+    mock_fast_ff,
+    mock_rapid_crop,
+    mock_rapid_ff,
+    sample_image_bytes,
 ):
     """Tier 3: Fast-ALPR fails on crop and full frame; crop RapidOCR succeeds with vehicle_box."""
     mock_yolo.return_value = DetectionResult(
-        vehicles=[DetectedVehicle(vehicle_type="truck", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
+        vehicles=[
+            DetectedVehicle(
+                vehicle_type="truck",
+                box=(10, 10, 50, 50),
+                crop=Image.new("RGB", (40, 40)),
+            )
+        ]
     )
     mock_fast_crop.return_value = []
     mock_fast_ff.return_value = []
-    mock_rapid_crop.return_value = [PlateResult(plate="UP14AB9999", vehicle_box=(10, 10, 50, 50))]
+    mock_rapid_crop.return_value = [
+        PlateResult(plate="UP14AB9999", vehicle_box=(10, 10, 50, 50))
+    ]
 
     resp = recognize_plate_image(sample_image_bytes, filename="dirty_plate.jpg")
 
@@ -147,7 +174,12 @@ def test_cascade_tier3_crop_rapidocr_fallback(
 @patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
 def test_cascade_tier4_full_frame_rapidocr_fallback(
-    mock_yolo, mock_fast_crop, mock_fast_ff, mock_rapid_crop, mock_rapid_ff, sample_image_bytes
+    mock_yolo,
+    mock_fast_crop,
+    mock_fast_ff,
+    mock_rapid_crop,
+    mock_rapid_ff,
+    sample_image_bytes,
 ):
     """Tier 4: All crop passes and full-frame Fast-ALPR fail; full-frame RapidOCR succeeds."""
     mock_yolo.return_value = DetectionResult(vehicles=[])
@@ -207,24 +239,47 @@ def test_plate_resolver_filters_decals_and_phones():
 @patch("app.services.ocr.strategies.FastALPROCREngine.scan_full_frame")
 @patch("app.services.ocr.strategies.FastALPROCREngine.scan_crops")
 @patch("app.services.pipeline.VehicleDetector.detect")
-def test_cascade_stage_logging(mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes):
+def test_cascade_stage_logging(
+    mock_yolo, mock_fast_crop, mock_fast_ff, sample_image_bytes
+):
     """Verify that stage and tier logging are emitted with [pipeline] prefix."""
     from app.core.logging import logger
 
     mock_yolo.return_value = DetectionResult(
-        vehicles=[DetectedVehicle(vehicle_type="car", box=(10, 10, 50, 50), crop=Image.new("RGB", (40, 40)))]
+        vehicles=[
+            DetectedVehicle(
+                vehicle_type="car",
+                box=(10, 10, 50, 50),
+                crop=Image.new("RGB", (40, 40)),
+            )
+        ]
     )
-    mock_fast_crop.return_value = [PlateResult(plate="RJ09GA0165", vehicle_box=(10, 10, 50, 50))]
+    mock_fast_crop.return_value = [
+        PlateResult(plate="RJ09GA0165", vehicle_box=(10, 10, 50, 50))
+    ]
 
     captured: list[str] = []
     sink_id = logger.add(captured.append, format="{message}")
     try:
         recognize_plate_image(sample_image_bytes, filename="log_test.jpg")
-        assert any("[pipeline] Starting ANPR for 'log_test.jpg'" in msg for msg in captured)
-        assert any("[pipeline] Stage 1: Detected 1 vehicle(s)" in msg for msg in captured)
-        assert any("[pipeline] Tier 1: Scanning 1 vehicle crop(s) via Fast-ALPR" in msg for msg in captured)
-        assert any("[pipeline] Tier 1 matched 1 plate(s): ['RJ09GA0165']" in msg for msg in captured)
-        assert any("[pipeline] Finished ANPR for 'log_test.jpg': 1 plate(s) found" in msg for msg in captured)
+        assert any(
+            "[pipeline] Starting ANPR for 'log_test.jpg'" in msg for msg in captured
+        )
+        assert any(
+            "[pipeline] Stage 1: Detected 1 vehicle(s)" in msg for msg in captured
+        )
+        assert any(
+            "[pipeline] Tier 1: Scanning 1 vehicle crop(s) via Fast-ALPR" in msg
+            for msg in captured
+        )
+        assert any(
+            "[pipeline] Tier 1 matched 1 plate(s): ['RJ09GA0165']" in msg
+            for msg in captured
+        )
+        assert any(
+            "[pipeline] Finished ANPR for 'log_test.jpg': 1 plate(s) found" in msg
+            for msg in captured
+        )
     finally:
         logger.remove(sink_id)
 
@@ -235,7 +290,11 @@ def test_fast_alpr_providers_exclude_coreml():
 
     with patch(
         "onnxruntime.get_available_providers",
-        return_value=["CoreMLExecutionProvider", "AzureExecutionProvider", "CPUExecutionProvider"],
+        return_value=[
+            "CoreMLExecutionProvider",
+            "AzureExecutionProvider",
+            "CPUExecutionProvider",
+        ],
     ):
         providers = _resolve_onnx_providers()
         assert "CoreMLExecutionProvider" not in providers
@@ -256,5 +315,3 @@ def test_fast_alpr_blank_frame_no_coreml_error():
     blank = np.zeros((480, 640, 3), dtype=np.uint8)
     plates = run_fast_alpr(blank)
     assert plates == []
-
-

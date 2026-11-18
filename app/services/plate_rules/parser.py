@@ -36,5 +36,7 @@ def parse_plate_info(raw_plate: str | None) -> dict[str, Any] | None:
         return None
 
     code = match.group(1) or match.group(4)
-    state_name = STATE_CODES.get(code.upper(), "Unknown State") if code else "Unknown State"
+    state_name = (
+        STATE_CODES.get(code.upper(), "Unknown State") if code else "Unknown State"
+    )
     return {"plate": cleaned, "state": state_name}

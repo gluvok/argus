@@ -1,7 +1,6 @@
 """Tests for scripts.benchmark utilities."""
 
 import os
-import tempfile
 from pathlib import Path
 
 from scripts.benchmark import natural_key, serialize_images

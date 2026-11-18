@@ -11,7 +11,9 @@ from app.services.ocr.rapidocr import get_rapidocr_engine
 _WARMUP_ERRORS = (RuntimeError, ValueError, OSError, AttributeError, ImportError)
 
 
-def _warm_up_engine(name: str, getter: Callable[[], Any], run_pass: Callable[[Any], None]) -> bool:
+def _warm_up_engine(
+    name: str, getter: Callable[[], Any], run_pass: Callable[[Any], None]
+) -> bool:
     """Warm up a single OCR engine with a synthetic dummy frame."""
     try:
         engine = getter()
@@ -26,7 +28,8 @@ def _warm_up_engine(name: str, getter: Callable[[], Any], run_pass: Callable[[An
 def warm_up_ocr() -> bool:
     """Pre-warm both Fast-ALPR and RapidOCR engines on synthetic dummy crops."""
     dummy = make_dummy_frame(64, 128)
-    fast_ok = _warm_up_engine("Fast-ALPR", get_fast_alpr_engine, lambda eng: eng.predict(dummy))
+    fast_ok = _warm_up_engine(
+        "Fast-ALPR", get_fast_alpr_engine, lambda eng: eng.predict(dummy)
+    )
     rapid_ok = _warm_up_engine("RapidOCR", get_rapidocr_engine, lambda eng: eng(dummy))
     return fast_ok and rapid_ok
-

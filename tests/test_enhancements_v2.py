@@ -85,7 +85,7 @@ def test_pedestrian_partitioned_as_outside(mock_get_model, sample_image_bytes):
     res = detector.detect(sample_image_bytes)
 
     assert len(res.vehicles) == 1
-    assert res.vehicles[0].vehicle_type == "truck" 
+    assert res.vehicles[0].vehicle_type == "truck"
 
 
 def test_crop_coordinate_adjustment():

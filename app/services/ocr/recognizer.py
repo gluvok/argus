@@ -40,7 +40,9 @@ class PlateRecognizer:
     def parse_plate_info(raw_plate: str | None) -> dict[str, Any] | None:
         import sys
 
-        if "app.services.ocr" in sys.modules and hasattr(sys.modules["app.services.ocr"], "parse_plate_info"):
+        if "app.services.ocr" in sys.modules and hasattr(
+            sys.modules["app.services.ocr"], "parse_plate_info"
+        ):
             return sys.modules["app.services.ocr"].parse_plate_info(raw_plate)
         from app.services.plate_rules.parser import parse_plate_info
 
@@ -49,10 +51,14 @@ class PlateRecognizer:
     def _run_ocr_inference(self, img: Image.Image) -> list[OCRToken]:
         return run_rapidocr_inference(img, self.get_rapidocr_engine)
 
-    def _collect_candidates(self, toks: list[OCRToken], l: list[list[OCRToken]], p: list[Any], s: str) -> list[PlateCandidate]:
+    def _collect_candidates(
+        self, toks: list[OCRToken], l: list[list[OCRToken]], p: list[Any], s: str
+    ) -> list[PlateCandidate]:
         return collect_candidates(toks, l, p, s, self.parse_plate_info)
 
-    def _extract_plates_from_image_array(self, img: Image.Image) -> list[dict[str, Any]]:
+    def _extract_plates_from_image_array(
+        self, img: Image.Image
+    ) -> list[dict[str, Any]]:
         return extract_plates(img, self.get_rapidocr_engine, self.parse_plate_info)
 
     def recognize(self, image_input: ImageInput) -> list[dict[str, Any]]:

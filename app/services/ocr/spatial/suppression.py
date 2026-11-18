@@ -12,10 +12,20 @@ def _is_candidate_overlapping(cand: PlateCandidate, sel: PlateCandidate) -> bool
         return True
 
     cb, sb = cand.box, sel.box
-    return bool(cb is not None and sb is not None and (box_iou(cb, sb) > 0.15 or is_contained(cb, sb, 0.60) or is_contained(sb, cb, 0.60)))
+    return bool(
+        cb is not None
+        and sb is not None
+        and (
+            box_iou(cb, sb) > 0.15
+            or is_contained(cb, sb, 0.60)
+            or is_contained(sb, cb, 0.60)
+        )
+    )
 
 
-def suppress_overlapping_candidates(candidates: list[PlateCandidate]) -> list[PlateCandidate]:
+def suppress_overlapping_candidates(
+    candidates: list[PlateCandidate],
+) -> list[PlateCandidate]:
     """Select non-overlapping plate candidates using greedy Spatial NMS."""
     selected: list[PlateCandidate] = []
     for cand in candidates:

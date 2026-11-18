@@ -92,7 +92,10 @@ def test_yolo_detector_multiple_vehicles(mock_get_model, sample_image_bytes):
     mock_box_multiple.__len__.return_value = 2
     mock_box_multiple.cls.cpu().numpy.return_value = [2, 7]  # Class 2 = car, 7 = truck
     mock_box_multiple.conf.cpu().numpy.return_value = [0.85, 0.90]
-    mock_box_multiple.xyxy.cpu().numpy.return_value = [[10, 10, 50, 50], [50, 50, 90, 90]]
+    mock_box_multiple.xyxy.cpu().numpy.return_value = [
+        [10, 10, 50, 50],
+        [50, 50, 90, 90],
+    ]
 
     mock_results = MagicMock()
     mock_results.boxes = mock_box_multiple
@@ -164,7 +167,9 @@ def test_yolo_unclamped_degenerate_box_skipped(mock_get_model, sample_image_byte
     mock_box.__len__.return_value = 1
     mock_box.cls.cpu().numpy.return_value = [2]  # car
     mock_box.conf.cpu().numpy.return_value = [0.9]
-    mock_box.xyxy.cpu().numpy.return_value = [[10, 10, 12, 12]]  # degenerate < 8px width/height
+    mock_box.xyxy.cpu().numpy.return_value = [
+        [10, 10, 12, 12]
+    ]  # degenerate < 8px width/height
 
     mock_results = MagicMock()
     mock_results.boxes = mock_box
@@ -193,11 +198,14 @@ def test_inspect_image_unsupported_format_and_bomb():
 
     # DecompressionBombError handling
     with (
-        patch("PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb detected")),
-        pytest.raises(PayloadTooLargeError, match="Image dimensions exceed permitted budget"),
+        patch(
+            "PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb detected")
+        ),
+        pytest.raises(
+            PayloadTooLargeError, match="Image dimensions exceed permitted budget"
+        ),
     ):
         probe_image(b"dummy")
-
 
 
 def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
@@ -228,7 +236,9 @@ def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
     # 4. DecompressionBombError via file path
     with (
         patch("PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb")),
-        pytest.raises(PayloadTooLargeError, match="Image dimensions exceed permitted budget"),
+        pytest.raises(
+            PayloadTooLargeError, match="Image dimensions exceed permitted budget"
+        ),
     ):
         load_rgb(str(file_path))
 
@@ -263,6 +273,3 @@ def test_vehicle_detector_thread_safe_singleton():
             assert mock_yolo.call_count == 1
         finally:
             VehicleDetector._model = old_model
-
-
-

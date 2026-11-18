@@ -37,7 +37,6 @@ def test_anpr_service_error():
     assert str(err) == "Base error message"
 
 
-
 def test_invalid_image_error():
     err = InvalidImageError("Unsupported image format")
     assert err.status_code == 400
@@ -87,6 +86,7 @@ def test_pil_max_image_pixels_set_at_constants_import():
         "import app.core.constants as c; "
         "assert Image.MAX_IMAGE_PIXELS == c.MAX_IMAGE_PIXELS, f'Expected {c.MAX_IMAGE_PIXELS}, got {Image.MAX_IMAGE_PIXELS}'"
     )
-    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=False
+    )
     assert result.returncode == 0, result.stderr
-

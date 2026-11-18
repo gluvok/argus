@@ -26,8 +26,12 @@ def test_ocr_engine_protocol_conformance():
 def test_strategy_scan_crops_with_mock_engine():
     """Verify generic crop scanner loops over vehicles and respects early exit."""
     mock_engine = MagicMock(spec=OCREngine)
-    v1 = DetectedVehicle(vehicle_type="car", box=(0, 0, 100, 100), crop=Image.new("RGB", (50, 50)))
-    v2 = DetectedVehicle(vehicle_type="truck", box=(0, 0, 80, 80), crop=Image.new("RGB", (50, 50)))
+    v1 = DetectedVehicle(
+        vehicle_type="car", box=(0, 0, 100, 100), crop=Image.new("RGB", (50, 50))
+    )
+    v2 = DetectedVehicle(
+        vehicle_type="truck", box=(0, 0, 80, 80), crop=Image.new("RGB", (50, 50))
+    )
 
     mock_engine.scan_vehicle.side_effect = [
         [PlateResult(plate="DL01AB1234", vehicle_box=(0, 0, 100, 100))],
@@ -64,6 +68,7 @@ def test_ocr_module_isolated_from_pipeline():
         "assert 'app.services.pipeline' not in sys.modules, "
         "'app.services.ocr.strategies illegally imported app.services.pipeline'"
     )
-    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=False
+    )
     assert result.returncode == 0, result.stderr
-

@@ -19,5 +19,7 @@ def clean_and_filter_tokens(raw_items: list[OCRToken]) -> tuple[list[OCRToken], 
             c = re.sub(r"[^A-Za-z0-9]", "", chunk).upper()
             if len(c) >= 2 and not is_decal_word(c) and c not in seen:
                 seen.add(c)
-                clean_tokens.append(OCRToken(text=c, score=tok.score, cx=tok.cx, cy=tok.cy, box=tok.box))
+                clean_tokens.append(
+                    OCRToken(text=c, score=tok.score, cx=tok.cx, cy=tok.cy, box=tok.box)
+                )
     return clean_tokens, " ".join(raw_text_parts) if raw_text_parts else "N/A"

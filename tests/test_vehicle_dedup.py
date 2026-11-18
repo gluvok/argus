@@ -63,4 +63,3 @@ def test_bounding_box_oop_methods():
     assert box.iou(identical) == 1.0
     disjoint = BoundingBox(200, 200, 300, 300)
     assert box.iou(disjoint) == 0.0
-

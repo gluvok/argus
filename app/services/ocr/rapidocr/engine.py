@@ -32,4 +32,3 @@ def get_rapidocr_engine() -> RapidOCR:
                 }
                 _rapidocr_instance = RapidOCR(params=params)
     return _rapidocr_instance
-

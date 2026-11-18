@@ -125,7 +125,9 @@ def test_recognize_two_pass_enhancement_success(mock_extract, sample_image_bytes
 
 @patch("app.services.ocr.PlateRecognizer._enhance_contrast")
 @patch("app.services.ocr.PlateRecognizer._extract_plates_from_image_array")
-def test_recognize_two_pass_enhancement_error_handled(mock_extract, mock_enhance, sample_image_bytes):
+def test_recognize_two_pass_enhancement_error_handled(
+    mock_extract, mock_enhance, sample_image_bytes
+):
     mock_extract.return_value = [{"plate": "N/A", "state": "N/A"}]
     mock_enhance.side_effect = RuntimeError("Contrast filter error")
 
@@ -142,7 +144,6 @@ def test_ocr_geometry_and_clustering_edge_cases():
         [["not_a_number", "bad"], [0, 0], [1, 1], [2, 2]]
     )
     assert cx is None and cy is None and box is None
-
 
     # 2. _is_same_horizontal_line when box is None but cy is available
     t1 = OCRToken(text="MH", score=0.9, cx=10.0, cy=20.0, box=None)
@@ -166,15 +167,18 @@ def test_ocr_geometry_and_clustering_edge_cases():
 
     # 5. _collect_candidates when parse_plate_info returns None
     with patch("app.services.ocr.parse_plate_info", return_value=None):
-        tok_valid = OCRToken(text="MH12AB1234", score=0.95, cx=10.0, cy=10.0, box=(0, 0, 10, 10))
+        tok_valid = OCRToken(
+            text="MH12AB1234", score=0.95, cx=10.0, cy=10.0, box=(0, 0, 10, 10)
+        )
         cands = PlateRecognizer()._collect_candidates([tok_valid], [], [], "MH12AB1234")
         assert cands == []
 
 
-
 @patch("app.services.ocr.PlateRecognizer._enhance_contrast")
 @patch("app.services.ocr.PlateRecognizer._extract_plates_from_image_array")
-def test_recognize_two_pass_enhancement_both_na(mock_extract, mock_enhance, sample_image_bytes):
+def test_recognize_two_pass_enhancement_both_na(
+    mock_extract, mock_enhance, sample_image_bytes
+):
     mock_extract.side_effect = [
         [{"plate": "N/A", "state": "N/A"}],
         [{"plate": "N/A", "state": "N/A"}],
@@ -236,5 +240,3 @@ def test_suppress_overlapping_candidates():
     selected = suppress_overlapping_candidates([cand1, cand2, cand3, cand4])
     assert len(selected) == 2
     assert [c.info["plate"] for c in selected] == ["RJ09GA0165", "DL01AB1234"]
-
-

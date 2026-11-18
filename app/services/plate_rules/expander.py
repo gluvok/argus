@@ -12,7 +12,12 @@ from app.services.plate_rules.normalizers import (
 )
 from app.services.plate_rules.states import STATE_CODES
 
-_NORM_BY_LEN = ((11, normalize_11_char), (10, normalize_10_char), (9, normalize_9_char), (8, normalize_8_char))
+_NORM_BY_LEN = (
+    (11, normalize_11_char),
+    (10, normalize_10_char),
+    (9, normalize_9_char),
+    (8, normalize_8_char),
+)
 
 
 def _expand(cand: str, results: list[str]) -> None:
@@ -36,13 +41,28 @@ def normalize_candidate_strings(raw_str: str) -> list[str]:
     for pfx in HSRP_PREFIXES:
         if cleaned.startswith(pfx) and len(cleaned) >= len(pfx) + 5:
             cands.append(cleaned[len(pfx) :])
-    if len(cleaned) in (10, 11) and cleaned[0].isalpha() and cleaned[1:3].isdigit() and cleaned[3].isalpha():
+    if (
+        len(cleaned) in (10, 11)
+        and cleaned[0].isalpha()
+        and cleaned[1:3].isdigit()
+        and cleaned[3].isalpha()
+    ):
         cands.append(cleaned[1:])
     for pos in (1, 2):
-        if pos + 2 < len(cleaned) and cleaned[pos : pos + 2] in STATE_CODES and cleaned[pos + 2].isdigit():
+        if (
+            pos + 2 < len(cleaned)
+            and cleaned[pos : pos + 2] in STATE_CODES
+            and cleaned[pos + 2].isdigit()
+        ):
             cands.append(cleaned[pos:])
     for base in list(cands):
-        if len(base) > 10 and base[:2] in STATE_CODES and base[2:4].isdigit() and base[-4:].isdigit() and len(base[4:-4]) > 2:
+        if (
+            len(base) > 10
+            and base[:2] in STATE_CODES
+            and base[2:4].isdigit()
+            and base[-4:].isdigit()
+            and len(base[4:-4]) > 2
+        ):
             for slen in (2, 1):
                 cands.append(base[:4] + base[4:-4][-slen:] + base[-4:])
     for pfx, repl in STATE_PREFIX_CORRECTIONS.items():

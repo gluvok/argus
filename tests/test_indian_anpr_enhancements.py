@@ -215,23 +215,38 @@ def test_candidate_ranking_prioritizes_bumper():
     from app.schemas import OCRToken
 
     # Two tokens with same rank & confidence: roof decal (y=100) vs bumper plate (y=800)
-    tok_roof = OCRToken(text="RJ09GA0165", score=0.95, cx=50.0, cy=100.0, box=(40, 90, 60, 110))
-    tok_bumper = OCRToken(text="MH12AB1234", score=0.95, cx=50.0, cy=800.0, box=(40, 790, 60, 810))
+    tok_roof = OCRToken(
+        text="RJ09GA0165", score=0.95, cx=50.0, cy=100.0, box=(40, 90, 60, 110)
+    )
+    tok_bumper = OCRToken(
+        text="MH12AB1234", score=0.95, cx=50.0, cy=800.0, box=(40, 790, 60, 810)
+    )
 
     recognizer = PlateRecognizer()
-    candidates = recognizer._collect_candidates([tok_roof, tok_bumper], [], [], "summary")
+    candidates = recognizer._collect_candidates(
+        [tok_roof, tok_bumper], [], [], "summary"
+    )
     assert len(candidates) >= 2
     candidates.sort(key=lambda c: (-c.rank, c.confidence, c.y_pos), reverse=True)
     # Bumper candidate (y=800) must be sorted ahead of roof candidate (y=100)
     assert candidates[0].info["plate"] == "MH12AB1234"
 
 
-
 @patch("app.services.ocr.PlateRecognizer.get_rapidocr_engine")
-def test_commercial_bus_raw_text_extracts_hr69d4793_over_antil(mock_get_engine, sample_image_bytes):
+def test_commercial_bus_raw_text_extracts_hr69d4793_over_antil(
+    mock_get_engine, sample_image_bytes
+):
     """Real 2-line plate HR69 / D4793 must be selected over coerced body decals like ANTIL."""
     mock_get_engine.return_value = _mock_ocr_engine(
-        txts=["POLYCORE WIRE & CABLES", "ANTIL", "mahindra", "auD", "HR69", "D4793", "SPEED"],
+        txts=[
+            "POLYCORE WIRE & CABLES",
+            "ANTIL",
+            "mahindra",
+            "auD",
+            "HR69",
+            "D4793",
+            "SPEED",
+        ],
         scores=[0.90, 0.88, 0.85, 0.70, 0.95, 0.94, 0.92],
         boxes=[
             [[10.0, 20.0], [250.0, 20.0], [250.0, 45.0], [10.0, 45.0]],
@@ -275,6 +290,3 @@ def test_enhance_contrast_blackhat_and_unsharp():
     assert enhanced.mode == "RGB"
     # Should upscale since min(w, h) < 300
     assert enhanced.size[0] > 200
-
-
-

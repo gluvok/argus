@@ -144,4 +144,3 @@ def test_plate_rules_edge_cases():
     # 9-character candidate normalization
     nine_char = normalize_candidate_strings("DL01A1234")
     assert len(nine_char) > 0
-

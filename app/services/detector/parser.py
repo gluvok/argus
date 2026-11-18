@@ -8,12 +8,19 @@ from app.services.detector import constants as dc
 from app.services.detector.geometry import BoundingBox, clamp_box
 
 
-def _dedup_vehicles(candidates: list[tuple[float, int, str, BoundingBox]]) -> list[tuple[str, BoundingBox]]:
+def _dedup_vehicles(
+    candidates: list[tuple[float, int, str, BoundingBox]],
+) -> list[tuple[str, BoundingBox]]:
     """Deduplicate overlapping vehicles by confidence and spatial IoU."""
     candidates.sort(key=lambda item: item[0], reverse=True)
     deduped: list[tuple[str, BoundingBox]] = []
     for _, _, v_type, b in candidates:
-        if not any(b.iou(eb) > cc.VEHICLE_IOU_THRESH or eb.contains(b, 0.70) or b.contains(eb, 0.70) for _, eb in deduped):
+        if not any(
+            b.iou(eb) > cc.VEHICLE_IOU_THRESH
+            or eb.contains(b, 0.70)
+            or b.contains(eb, 0.70)
+            for _, eb in deduped
+        ):
             deduped.append((v_type, b))
     deduped.sort(key=lambda item: item[1].area, reverse=True)
     return deduped
@@ -31,16 +38,29 @@ def parse_detections(
     vehicle_candidates: list[tuple[float, int, str, BoundingBox]] = []
     min_v_area = cc.MIN_VEHICLE_BOX_AREA_RATIO * (width * height)
 
-    for idx, (raw_cls, conf) in enumerate(bounded(list(zip(cls_ids, confs, strict=False)), dc.MAX_DETECTIONS, "detections")):
+    for idx, (raw_cls, conf) in enumerate(
+        bounded(
+            list(zip(cls_ids, confs, strict=False)), dc.MAX_DETECTIONS, "detections"
+        )
+    ):
         cls_id = int(raw_cls)
-        raw_b = (int(xyxy[idx][0]), int(xyxy[idx][1]), int(xyxy[idx][2]), int(xyxy[idx][3])) if xyxy is not None and idx < len(xyxy) and len(xyxy[idx]) >= 4 else None
+        raw_b = (
+            (int(xyxy[idx][0]), int(xyxy[idx][1]), int(xyxy[idx][2]), int(xyxy[idx][3]))
+            if xyxy is not None and idx < len(xyxy) and len(xyxy[idx]) >= 4
+            else None
+        )
         box = clamp_box(raw_b, width, height)
         if box is None:
             continue
         area = box.area
 
-        if cls_id in dc.VEHICLE_CLASS_NAMES and conf >= vehicle_conf_thresh and area >= min_v_area:
-            vehicle_candidates.append((float(conf), area, dc.VEHICLE_CLASS_NAMES[cls_id], box))
+        if (
+            cls_id in dc.VEHICLE_CLASS_NAMES
+            and conf >= vehicle_conf_thresh
+            and area >= min_v_area
+        ):
+            vehicle_candidates.append(
+                (float(conf), area, dc.VEHICLE_CLASS_NAMES[cls_id], box)
+            )
 
     return _dedup_vehicles(vehicle_candidates)
-

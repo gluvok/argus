@@ -19,4 +19,3 @@ __all__ = [
     "recognize_plate_image",
     "validate_plate_results",
 ]
-

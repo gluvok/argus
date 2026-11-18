@@ -22,6 +22,8 @@ class FastALPROCREngine:
         """Scan multiple vehicle crops in proximity order."""
         return scan_crops_with_engine(self, vehicles)
 
-    def scan_full_frame(self, image: ImageInput, filename: str = "image.jpg") -> list[PlateResult]:
+    def scan_full_frame(
+        self, image: ImageInput, filename: str = "image.jpg"
+    ) -> list[PlateResult]:
         """Execute full-frame Fast-ALPR fallback."""
         return run_fast_alpr_pipeline(image)

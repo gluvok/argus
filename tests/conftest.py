@@ -16,7 +16,9 @@ except ImportError:
     pass
 
 
-def create_test_jpeg(width: int, height: int, color: tuple[int, int, int] = (100, 100, 100)) -> bytes:
+def create_test_jpeg(
+    width: int, height: int, color: tuple[int, int, int] = (100, 100, 100)
+) -> bytes:
     """Generates valid JPEG image bytes of specified dimensions for testing."""
     img = Image.new("RGB", (width, height), color=color)
     buf = io.BytesIO()
@@ -63,7 +65,9 @@ def _reset_test_settings():
 _session_exitstatus = 0
 
 
-def pytest_sessionfinish(session: pytest.Session, exitstatus: int | pytest.ExitCode) -> None:
+def pytest_sessionfinish(
+    session: pytest.Session, exitstatus: int | pytest.ExitCode
+) -> None:
     global _session_exitstatus
     _session_exitstatus = int(exitstatus)
 
@@ -73,4 +77,3 @@ def pytest_unconfigure(config: pytest.Config) -> None:
 
     if sys.platform == "darwin":
         os._exit(_session_exitstatus)
-

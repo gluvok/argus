@@ -24,12 +24,16 @@ class OCREngine(Protocol):
         """Scan vehicle crops in proximity order."""
         ...
 
-    def scan_full_frame(self, image: ImageInput, filename: str = "image.jpg") -> list[PlateResult]:
+    def scan_full_frame(
+        self, image: ImageInput, filename: str = "image.jpg"
+    ) -> list[PlateResult]:
         """Fallback scan on full camera frame."""
         ...
 
 
-def scan_crops_with_engine(engine: Any, vehicles: list[DetectedVehicle]) -> list[PlateResult]:
+def scan_crops_with_engine(
+    engine: Any, vehicles: list[DetectedVehicle]
+) -> list[PlateResult]:
     """Scan vehicle crops in proximity order using the provided engine."""
     results, seen = [], set()
     for v in vehicles:

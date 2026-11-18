@@ -18,4 +18,3 @@ __all__ = [
     "suppress_overlapping_candidates",
     "warm_up_ocr",
 ]
-

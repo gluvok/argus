@@ -37,21 +37,50 @@ class VehicleDetector:
     def warm_up(cls) -> bool:
         """Pre-warm detector with dummy input to force backend graph compilation."""
         try:
-            dummy = make_dummy_frame(constants.DEFAULT_YOLO_IMGSZ, constants.DEFAULT_YOLO_IMGSZ)
+            dummy = make_dummy_frame(
+                constants.DEFAULT_YOLO_IMGSZ, constants.DEFAULT_YOLO_IMGSZ
+            )
             cls.get_model()(dummy, imgsz=constants.DEFAULT_YOLO_IMGSZ, verbose=False)
             return True
-        except (RuntimeError, ValueError, OSError, AttributeError, ImportError):
+        except RuntimeError, ValueError, OSError, AttributeError, ImportError:
             return False
 
-    def _run_detection(self, img: Image.Image, v_conf: float) -> list[tuple[str, BoundingBox]]:
+    def _run_detection(
+        self, img: Image.Image, v_conf: float
+    ) -> list[tuple[str, BoundingBox]]:
         require(img is not None, "_run_detection called with no image")
-        res = next(iter(self.get_model()(img, imgsz=constants.DEFAULT_YOLO_IMGSZ, agnostic_nms=constants.YOLO_AGNOSTIC_NMS, verbose=False)))
+        res = next(
+            iter(
+                self.get_model()(
+                    img,
+                    imgsz=constants.DEFAULT_YOLO_IMGSZ,
+                    agnostic_nms=constants.YOLO_AGNOSTIC_NMS,
+                    verbose=False,
+                )
+            )
+        )
         boxes = getattr(res, "boxes", None)
         if boxes is None or len(boxes) == 0 or not hasattr(boxes, "cls"):
             return []
-        c_ids = boxes.cls.cpu().numpy() if hasattr(boxes.cls, "cpu") else np.asarray(boxes.cls)
-        confs = boxes.conf.cpu().numpy() if hasattr(boxes.conf, "cpu") else np.asarray(boxes.conf)
-        xyxy = (boxes.xyxy.cpu().numpy() if hasattr(boxes.xyxy, "cpu") else np.asarray(boxes.xyxy)) if getattr(boxes, "xyxy", None) is not None else None
+        c_ids = (
+            boxes.cls.cpu().numpy()
+            if hasattr(boxes.cls, "cpu")
+            else np.asarray(boxes.cls)
+        )
+        confs = (
+            boxes.conf.cpu().numpy()
+            if hasattr(boxes.conf, "cpu")
+            else np.asarray(boxes.conf)
+        )
+        xyxy = (
+            (
+                boxes.xyxy.cpu().numpy()
+                if hasattr(boxes.xyxy, "cpu")
+                else np.asarray(boxes.xyxy)
+            )
+            if getattr(boxes, "xyxy", None) is not None
+            else None
+        )
         return parse_detections(c_ids, confs, xyxy, img.width, img.height, v_conf)
 
     def detect(self, image_input: ImageInput) -> DetectionResult:

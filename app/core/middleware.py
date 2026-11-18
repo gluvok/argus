@@ -26,13 +26,17 @@ def register_middleware(app: FastAPI) -> None:
         start_time = time.perf_counter()
         client_ip = request.client.host if request.client else "unknown"
         query = f"?{request.url.query}" if request.url.query else ""
-        logger.info(f"Incoming request: {request.method} {request.url.path}{query} from {client_ip}")
+        logger.info(
+            f"Incoming request: {request.method} {request.url.path}{query} from {client_ip}"
+        )
 
         try:
             response: Response = await call_next(request)
         except Exception:
             duration_ms = (time.perf_counter() - start_time) * 1000
-            logger.error(f"Failed request: {request.method} {request.url.path}{query} after {duration_ms:.2f}ms")
+            logger.error(
+                f"Failed request: {request.method} {request.url.path}{query} after {duration_ms:.2f}ms"
+            )
             raise
 
         duration_ms = (time.perf_counter() - start_time) * 1000

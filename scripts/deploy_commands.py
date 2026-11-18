@@ -3,10 +3,20 @@
 TARGET = "/opt/argus"
 PORT = 8000
 EXCLUDES: list[str] = [
-    "--exclude=.venv", "--exclude=.env*", "--exclude=__pycache__", "--exclude=.git",
-    "--exclude=tests", "--exclude=docs", "--exclude=debug_crops", "--exclude=debug_output",
-    "--exclude=.cache", "--exclude=.coverage", "--exclude=.pytest_cache",
-    "--exclude=.ruff_cache", "--exclude=compiled_dist", "--exclude=dist",
+    "--exclude=.venv",
+    "--exclude=.env*",
+    "--exclude=__pycache__",
+    "--exclude=.git",
+    "--exclude=tests",
+    "--exclude=docs",
+    "--exclude=debug_crops",
+    "--exclude=debug_output",
+    "--exclude=.cache",
+    "--exclude=.coverage",
+    "--exclude=.pytest_cache",
+    "--exclude=.ruff_cache",
+    "--exclude=compiled_dist",
+    "--exclude=dist",
 ]
 
 

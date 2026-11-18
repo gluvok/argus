@@ -8,7 +8,14 @@ from app.schemas import DetectedVehicle, PlateResult
 from app.services.image_processing import ImageInput
 from app.services.ocr.protocol import scan_crops_with_engine
 
-_OCR_ERRORS = (ANPRServiceError, ValueError, RuntimeError, OSError, KeyError, AttributeError)
+_OCR_ERRORS = (
+    ANPRServiceError,
+    ValueError,
+    RuntimeError,
+    OSError,
+    KeyError,
+    AttributeError,
+)
 
 
 class RapidOCREngine:
@@ -24,7 +31,9 @@ class RapidOCREngine:
             return self.recognizer
         import sys
 
-        if "app.services.pipeline" in sys.modules and hasattr(sys.modules["app.services.pipeline"], "PlateRecognizer"):
+        if "app.services.pipeline" in sys.modules and hasattr(
+            sys.modules["app.services.pipeline"], "PlateRecognizer"
+        ):
             return sys.modules["app.services.pipeline"].PlateRecognizer()
         from app.services.ocr.recognizer import PlateRecognizer
 
@@ -44,7 +53,9 @@ class RapidOCREngine:
         """Scan multiple vehicle crops in proximity order."""
         return scan_crops_with_engine(self, vehicles)
 
-    def scan_full_frame(self, image: ImageInput, filename: str = "image.jpg") -> list[PlateResult]:
+    def scan_full_frame(
+        self, image: ImageInput, filename: str = "image.jpg"
+    ) -> list[PlateResult]:
         """Execute full-frame RapidOCR fallback."""
         from app.services.pipeline.fallback import run_full_frame_fallback
 

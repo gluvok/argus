@@ -20,7 +20,9 @@ def probe_image(image_bytes: bytes) -> tuple[str, int, int]:
 
     if len(image_bytes) > MAX_UPLOAD_BYTES:
         limit_mb = MAX_UPLOAD_BYTES // (1024 * 1024)
-        raise PayloadTooLargeError(f"Image exceeds maximum permitted size of {limit_mb} MB.")
+        raise PayloadTooLargeError(
+            f"Image exceeds maximum permitted size of {limit_mb} MB."
+        )
 
     try:
         with io.BytesIO(image_bytes) as buf, Image.open(buf) as probe:
@@ -32,7 +34,9 @@ def probe_image(image_bytes: bytes) -> tuple[str, int, int]:
                 )
             return fmt.upper(), probe.width, probe.height
     except Image.DecompressionBombError as exc:
-        raise PayloadTooLargeError(f"Image dimensions exceed permitted budget: {exc}") from exc
+        raise PayloadTooLargeError(
+            f"Image dimensions exceed permitted budget: {exc}"
+        ) from exc
     except InvalidImageError:
         raise
     except Exception as exc:
@@ -43,7 +47,10 @@ def validate_image_upload(image_bytes: bytes, content_type: str | None = None) -
     """Validate that uploaded file bytes constitute an allowed image format and MIME type."""
     if content_type:
         clean_type = content_type.split(";")[0].strip().lower()
-        if clean_type != "application/octet-stream" and clean_type not in ALLOWED_IMAGE_MIME_TYPES:
+        if (
+            clean_type != "application/octet-stream"
+            and clean_type not in ALLOWED_IMAGE_MIME_TYPES
+        ):
             raise InvalidImageError(
                 f"Unsupported content type '{content_type}'. Allowed types: image/jpeg, image/png, image/webp, image/bmp."
             )
@@ -60,6 +67,7 @@ async def read_upload_stream(file: Any, max_bytes: int = MAX_UPLOAD_BYTES) -> by
         buffer.extend(chunk)
         if len(buffer) > max_bytes:
             limit_mb = max_bytes // (1024 * 1024)
-            raise PayloadTooLargeError(f"Image exceeds maximum permitted size of {limit_mb} MB.")
+            raise PayloadTooLargeError(
+                f"Image exceeds maximum permitted size of {limit_mb} MB."
+            )
     return bytes(buffer)
-

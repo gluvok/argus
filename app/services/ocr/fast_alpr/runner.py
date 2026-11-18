@@ -53,4 +53,6 @@ def run_fast_alpr_on_vehicle(vehicle: Any) -> list[PlateResult]:
     if getattr(vehicle, "crop", None) is None:
         return []
     crop_bgr = cv2.cvtColor(np.array(vehicle.crop), cv2.COLOR_RGB2BGR)
-    return [PlateResult(plate=p, vehicle_box=vehicle.box) for p in run_fast_alpr(crop_bgr)]
+    return [
+        PlateResult(plate=p, vehicle_box=vehicle.box) for p in run_fast_alpr(crop_bgr)
+    ]

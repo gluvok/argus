@@ -20,7 +20,6 @@ def test_root_endpoint(client):
     assert data["docs"] == "/docs"
 
 
-
 def test_process_time_header(client):
     response = client.get("/")
     assert response.status_code == 200
@@ -53,10 +52,12 @@ async def test_lifespan_warmup_warning():
     from app.core.lifespan import lifespan
     from app.server import app
 
-    with patch("app.core.lifespan.VehicleDetector.get_model", side_effect=RuntimeError("GPU warmup failure")):
+    with patch(
+        "app.core.lifespan.VehicleDetector.get_model",
+        side_effect=RuntimeError("GPU warmup failure"),
+    ):
         async with lifespan(app):
             pass
-
 
 
 def test_exception_handlers():
@@ -90,4 +91,3 @@ def test_exception_handlers():
     resp_generic = client.get("/_test_generic")
     assert resp_generic.status_code == 500
     assert resp_generic.json()["error_type"] == "InternalServerError"
-
