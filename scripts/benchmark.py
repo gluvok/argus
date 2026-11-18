@@ -12,7 +12,7 @@ from app.schemas import RecognitionResponse
 from app.services.pipeline import recognize_plate_image
 
 TESTS_DIR = "tests/images"
-REPORT_FILE = "benchmark_report.md"
+REPORT_FILE = "docs/analysis/benchmark_report.md"
 
 
 def preload_models() -> None:
@@ -38,7 +38,7 @@ def natural_key(filename: str) -> int:
 
 
 def serialize_images(directory: str = TESTS_DIR) -> list[str]:
-    """Ensure images in directory are consecutively numbered 1.jpg .. N.jpg."""
+    """Return image paths sorted numerically without modifying disk."""
     if not os.path.exists(directory):
         return []
     valid_exts = (".jpg", ".jpeg", ".png")
@@ -46,28 +46,7 @@ def serialize_images(directory: str = TESTS_DIR) -> list[str]:
         [f for f in os.listdir(directory) if f.lower().endswith(valid_exts)],
         key=natural_key,
     )
-    if not filenames:
-        return []
-
-    expected = [f"{i}.jpg" for i in range(1, len(filenames) + 1)]
-    if filenames == expected:
-        return [os.path.join(directory, f) for f in filenames]
-
-    print(f"Serializing {len(filenames)} images in '{directory}'...")
-    staged: list[tuple[str, str]] = []
-    for i, fname in enumerate(filenames, start=1):
-        src = os.path.join(directory, fname)
-        temp_name = os.path.join(directory, f"_staging_ser_{i}.tmp")
-        os.rename(src, temp_name)
-        staged.append((temp_name, os.path.join(directory, f"{i}.jpg")))
-
-    final_paths: list[str] = []
-    for temp_path, target_path in staged:
-        os.rename(temp_path, target_path)
-        final_paths.append(target_path)
-
-    print(f"Serialized {len(final_paths)} images (1.jpg to {len(final_paths)}.jpg).\n")
-    return final_paths
+    return [os.path.join(directory, f) for f in filenames]
 
 
 def _build_summary_markdown(
