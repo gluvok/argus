@@ -5,6 +5,7 @@ from typing import Any
 
 from app.core.logging import logger
 from app.schemas import PlateResult, RecognitionResponse
+from app.services.detector import VehicleDetector
 from app.services.image_processing import decode_image
 from app.services.ocr.strategies import FastALPROCREngine, RapidOCREngine
 from app.services.pipeline.helpers import _resolve_bytes
@@ -14,9 +15,14 @@ from app.services.pipeline.sorting import sort_by_proximity
 
 def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:
     """Execute cascaded ANPR with vehicle detection and 4-tier fallbacks."""
-    import app.services.pipeline as pl
+    import sys
 
-    detection = pl.VehicleDetector().detect(prepared_img)
+    v_cls = (
+        sys.modules["app.services.pipeline"].VehicleDetector
+        if "app.services.pipeline" in sys.modules and hasattr(sys.modules["app.services.pipeline"], "VehicleDetector")
+        else VehicleDetector
+    )
+    detection = v_cls().detect(prepared_img)
     vehicles = sort_by_proximity(detection.vehicles) if detection.vehicles else []
     logger.info(f"[pipeline] Stage 1: Detected {len(vehicles)} vehicle(s)")
 

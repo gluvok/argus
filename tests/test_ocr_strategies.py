@@ -51,3 +51,19 @@ def test_strategy_scan_crops_with_mock_engine():
         results = scan_crops_with_engine(mock_engine, [v1, v2])
         assert len(results) == 2
         assert mock_engine.scan_vehicle.call_count == 2
+
+
+def test_ocr_module_isolated_from_pipeline():
+    """Verify app.services.ocr does not import pipeline package."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys; "
+        "import app.services.ocr.strategies; "
+        "assert 'app.services.pipeline' not in sys.modules, "
+        "'app.services.ocr.strategies illegally imported app.services.pipeline'"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+

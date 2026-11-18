@@ -38,9 +38,13 @@ class PlateRecognizer:
 
     @staticmethod
     def parse_plate_info(raw_plate: str | None) -> dict[str, Any] | None:
-        import app.services.ocr as ocr_mod
+        import sys
 
-        return ocr_mod.parse_plate_info(raw_plate)
+        if "app.services.ocr" in sys.modules and hasattr(sys.modules["app.services.ocr"], "parse_plate_info"):
+            return sys.modules["app.services.ocr"].parse_plate_info(raw_plate)
+        from app.services.plate_rules.parser import parse_plate_info
+
+        return parse_plate_info(raw_plate)
 
     def _run_ocr_inference(self, img: Image.Image) -> list[OCRToken]:
         return run_rapidocr_inference(img, self.get_rapidocr_engine)

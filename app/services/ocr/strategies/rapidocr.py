@@ -22,9 +22,13 @@ class RapidOCREngine:
     def _rec(self) -> Any:
         if self.recognizer is not None:
             return self.recognizer
-        import app.services.pipeline as pl
+        import sys
 
-        return pl.PlateRecognizer()
+        if "app.services.pipeline" in sys.modules and hasattr(sys.modules["app.services.pipeline"], "PlateRecognizer"):
+            return sys.modules["app.services.pipeline"].PlateRecognizer()
+        from app.services.ocr.recognizer import PlateRecognizer
+
+        return PlateRecognizer()
 
     def scan_vehicle(self, vehicle: DetectedVehicle) -> list[PlateResult]:
         """Scan a single vehicle crop with RapidOCR and coordinate translation."""
