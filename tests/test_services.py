@@ -233,3 +233,36 @@ def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
         load_rgb(str(file_path))
 
 
+def test_vehicle_detector_thread_safe_singleton():
+    """Verify VehicleDetector acquires a thread lock and returns consistent singleton."""
+    import threading
+    from unittest.mock import MagicMock, patch
+
+    assert hasattr(VehicleDetector, "_lock")
+    assert isinstance(VehicleDetector._lock, type(threading.Lock()))
+
+    instances = []
+
+    def get_inst():
+        instances.append(VehicleDetector.get_model())
+
+    with patch("app.services.detector.YOLO") as mock_yolo:
+        mock_instance = MagicMock()
+        mock_yolo.return_value = mock_instance
+        old_model = VehicleDetector._model
+        try:
+            VehicleDetector._model = None
+            threads = [threading.Thread(target=get_inst) for _ in range(10)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            assert len(instances) == 10
+            assert all(inst is mock_instance for inst in instances)
+            assert mock_yolo.call_count == 1
+        finally:
+            VehicleDetector._model = old_model
+
+
+
