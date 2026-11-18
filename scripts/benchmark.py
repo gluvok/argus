@@ -1,12 +1,18 @@
-"""Direct Model Benchmark & Testing Utility (`uv run python test_direct.py`)."""
+"""Direct Model Benchmark & Testing Utility (`uv run python scripts/benchmark.py`)."""
 
 import os
 import re
 import statistics
+import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+_ROOT = str(Path(__file__).resolve().parent.parent)
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 from app.schemas import RecognitionResponse
 from app.services.pipeline import recognize_plate_image
