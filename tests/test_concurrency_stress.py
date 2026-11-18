@@ -1,7 +1,10 @@
-import io
 import concurrent.futures
+import io
+
 from PIL import Image
+
 from app.services.pipeline.orchestrator import recognize_plate_image
+
 
 def test_concurrent_inference_thread_safety():
     img = Image.new("RGB", (640, 480), color=(200, 200, 200))
