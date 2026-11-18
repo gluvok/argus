@@ -176,6 +176,12 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 .DS_Store
 eval_debug_crops/
+
+# Session dumps and standalone ONNX weights
+:memory:.ses
+*.ses
+yolo26n.onnx
+
 human_gate_spike/
 
 # Images are not version controlled, but ground truth is: it is small,
@@ -196,3 +202,8 @@ tests/*.jpg
 !tests/5.jpg
 
 debug_crops/
+
+# Session dumps and standalone ONNX weights
+:memory:.ses
+*.ses
+yolo26n.onnx
