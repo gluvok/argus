@@ -67,3 +67,26 @@ def test_contracts_bounded():
 
     with pytest.raises(ContractViolation, match="limit must be positive"):
         bounded([1], 0, "invalid limit")
+
+
+def test_cors_credentials_not_allowed_with_wildcard():
+    """Verify that wildcard CORS does not enable credentials."""
+    if "*" in constants.CORS_ORIGINS:
+        assert constants.CORS_ALLOW_CREDENTIALS is False, (
+            "CORS allow_credentials must be False when allow_origins is wildcard '*'"
+        )
+
+
+def test_pil_max_image_pixels_set_at_constants_import():
+    """Verify Image.MAX_IMAGE_PIXELS is configured without needing loader.py imported."""
+    import subprocess
+    import sys
+
+    code = (
+        "from PIL import Image; "
+        "import app.core.constants as c; "
+        "assert Image.MAX_IMAGE_PIXELS == c.MAX_IMAGE_PIXELS, f'Expected {c.MAX_IMAGE_PIXELS}, got {Image.MAX_IMAGE_PIXELS}'"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+

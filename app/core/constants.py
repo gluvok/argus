@@ -14,7 +14,7 @@ SERVER_PORT = 8000
 DOCS_URL = "/docs"
 REDOC_URL = "/redoc"
 CORS_ORIGINS: list[str] = ["*"]
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 CORS_ALLOW_METHODS: list[str] = ["*"]
 CORS_ALLOW_HEADERS: list[str] = ["*"]
 
@@ -34,8 +34,11 @@ MAX_CONCURRENT_INFERENCES = 4
 OPENVINO_NUM_THREADS = 4
 
 # Image Payload & Security Limits
+from PIL import Image
+
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 MAX_IMAGE_PIXELS = 50_000_000
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 # Ensure Ultralytics and OpenVINO caches/telemetry are safely isolated
 _yolo_dir = os.path.abspath(YOLO_CONFIG_DIR)
