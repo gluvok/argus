@@ -27,12 +27,12 @@ jobs:
           sudo apt-get install -y clang patchelf
 
       - name: Setup uv Package Manager
-        uses: astral-sh/setup-uv@v10.3.2
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: false
 
       - name: Setup Python Runtime
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v7.1.0
         with:
           python-version-file: ".python-version"
 
