@@ -1,6 +1,11 @@
+name: Nuitka Build & Deploy
+
 on:
-  push:
+  workflow_run:
+    workflows: [ "CI" ]
+    types: [ completed ]
     branches: [ main ]
+  push:
     tags: [ 'v*' ]
   workflow_dispatch:
 
@@ -9,6 +14,7 @@ permissions:
 
 jobs:
   build-and-deploy:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-26.04-arm
 
     steps:
@@ -21,7 +27,7 @@ jobs:
           sudo apt-get install -y clang patchelf
 
       - name: Setup uv Package Manager
-        uses: astral-sh/setup-uv@v10.3.1
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           enable-cache: false
 
