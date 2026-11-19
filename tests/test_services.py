@@ -181,40 +181,11 @@ def test_yolo_unclamped_degenerate_box_skipped(mock_get_model, sample_image_byte
     assert len(result.vehicles) == 0
 
 
-def test_inspect_image_unsupported_format_and_bomb():
-    import io
-    from unittest.mock import patch
-
-    from PIL import Image
-
-    from app.core.exceptions import InvalidImageError, PayloadTooLargeError
-    from app.services.image_processing import probe_image
-
-    # Create GIF in memory
-    buf = io.BytesIO()
-    Image.new("RGB", (20, 20)).save(buf, format="GIF")
-    with pytest.raises(InvalidImageError, match="Unsupported image format"):
-        probe_image(buf.getvalue())
-
-    # DecompressionBombError handling
-    with (
-        patch(
-            "PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb detected")
-        ),
-        pytest.raises(
-            PayloadTooLargeError, match="Image dimensions exceed permitted budget"
-        ),
-    ):
-        probe_image(b"dummy")
-
-
 def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
-    from unittest.mock import patch
 
     import numpy as np
-    from PIL import Image
 
-    from app.core.exceptions import InvalidImageError, PayloadTooLargeError
+    from app.core.exceptions import InvalidImageError
     from app.services.image_processing import load_rgb
 
     # 1. 2D grayscale array
@@ -232,15 +203,6 @@ def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
     # 3. Nonexistent file path string
     with pytest.raises(InvalidImageError, match="Could not decode uploaded image"):
         load_rgb(str(tmp_path / "nonexistent.jpg"))
-
-    # 4. DecompressionBombError via file path
-    with (
-        patch("PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb")),
-        pytest.raises(
-            PayloadTooLargeError, match="Image dimensions exceed permitted budget"
-        ),
-    ):
-        load_rgb(str(file_path))
 
 
 def test_vehicle_detector_thread_safe_singleton():

@@ -2,7 +2,6 @@
 
 from app.services.image_processing.loader import ImageInput, load_rgb, make_dummy_frame
 from app.services.image_processing.security import (
-    probe_image,
     read_upload_stream,
     validate_image_upload,
 )
@@ -13,7 +12,6 @@ __all__ = [
     "decode_image",
     "load_rgb",
     "make_dummy_frame",
-    "probe_image",
     "read_upload_stream",
     "validate_image_upload",
 ]
