@@ -14,7 +14,7 @@ SERVER_PORT = 8000
 DOCS_URL = "/docs"
 REDOC_URL = "/redoc"
 CORS_ORIGINS: list[str] = ["*"]
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 CORS_ALLOW_METHODS: list[str] = ["*"]
 CORS_ALLOW_HEADERS: list[str] = ["*"]
 
