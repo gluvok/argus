@@ -29,13 +29,7 @@ class RapidOCREngine:
     def _rec(self) -> Any:
         if self.recognizer is not None:
             return self.recognizer
-        import sys
-
-        if "app.services.pipeline" in sys.modules and hasattr(
-            sys.modules["app.services.pipeline"], "PlateRecognizer"
-        ):
-            return sys.modules["app.services.pipeline"].PlateRecognizer()
-        from app.services.ocr.recognizer import PlateRecognizer
+        from app.services.pipeline import PlateRecognizer
 
         return PlateRecognizer()
 

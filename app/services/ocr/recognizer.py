@@ -38,13 +38,7 @@ class PlateRecognizer:
 
     @staticmethod
     def parse_plate_info(raw_plate: str | None) -> dict[str, Any] | None:
-        import sys
-
-        if "app.services.ocr" in sys.modules and hasattr(
-            sys.modules["app.services.ocr"], "parse_plate_info"
-        ):
-            return sys.modules["app.services.ocr"].parse_plate_info(raw_plate)
-        from app.services.plate_rules.parser import parse_plate_info
+        from app.services.ocr import parse_plate_info
 
         return parse_plate_info(raw_plate)
 

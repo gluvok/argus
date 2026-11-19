@@ -17,15 +17,7 @@ _inference_lock = threading.Lock()
 
 def _execute_cascade(prepared_img: Any, filename: str) -> list[PlateResult]:
     """Execute cascaded ANPR with vehicle detection and 4-tier fallbacks."""
-    import sys
-
-    v_cls = (
-        sys.modules["app.services.pipeline"].VehicleDetector
-        if "app.services.pipeline" in sys.modules
-        and hasattr(sys.modules["app.services.pipeline"], "VehicleDetector")
-        else VehicleDetector
-    )
-    detection = v_cls().detect(prepared_img)
+    detection = VehicleDetector().detect(prepared_img)
     vehicles = sort_by_proximity(detection.vehicles) if detection.vehicles else []
     logger.info(f"[pipeline] Stage 1: Detected {len(vehicles)} vehicle(s)")
 
