@@ -196,3 +196,7 @@ tests/*.jpg
 !tests/5.jpg
 
 debug_crops/
+
+# Scratch documentation
+docs/analysis/
+docs/plans/

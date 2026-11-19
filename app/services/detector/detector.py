@@ -1,5 +1,7 @@
 """Stage 1: YOLO26 Vehicle Detection and Crop Extraction."""
 
+import threading
+
 import numpy as np
 from PIL import Image
 from ultralytics import YOLO
@@ -16,15 +18,18 @@ class VehicleDetector:
     """Stage 1: YOLO26 Vehicle Detection."""
 
     _model: YOLO | None = None
+    _lock = threading.Lock()
     _clamp_box = staticmethod(clamp_box)
     _parse_detections = staticmethod(parse_detections)
 
     @classmethod
     def get_model(cls) -> YOLO:
         if cls._model is None:
-            import app.services.detector as yf
+            with cls._lock:
+                if cls._model is None:
+                    import app.services.detector as yf
 
-            cls._model = yf.YOLO(constants.YOLO_MODEL_NAME)
+                    cls._model = yf.YOLO(constants.YOLO_MODEL_NAME)
         ensure(cls._model is not None, "YOLO model failed to initialise")
         return cls._model
 
