@@ -18,7 +18,7 @@ class VehicleDetector:
     """Stage 1: YOLO26 Vehicle Detection."""
 
     _model: YOLO | None = None
-    _lock = threading.Lock()
+    _lock = threading.RLock()
     _clamp_box = staticmethod(clamp_box)
     _parse_detections = staticmethod(parse_detections)
 
@@ -27,7 +27,9 @@ class VehicleDetector:
         if cls._model is None:
             with cls._lock:
                 if cls._model is None:
-                    cls._model = YOLO(constants.YOLO_MODEL_NAME)
+                    import app.services.detector as yf
+
+                    cls._model = yf.YOLO(constants.YOLO_MODEL_NAME)
         ensure(cls._model is not None, "YOLO model failed to initialise")
         return cls._model
 
@@ -36,16 +38,18 @@ class VehicleDetector:
         """Pre-warm detector with dummy input to force backend graph compilation."""
         try:
             dummy = make_dummy_frame(constants.DEFAULT_YOLO_IMGSZ, constants.DEFAULT_YOLO_IMGSZ)
+            model = cls.get_model()
             with cls._lock:
-                cls.get_model()(dummy, imgsz=constants.DEFAULT_YOLO_IMGSZ, verbose=False)
+                model(dummy, imgsz=constants.DEFAULT_YOLO_IMGSZ, verbose=False)
             return True
         except (RuntimeError, ValueError, OSError, AttributeError, ImportError):
             return False
 
     def _run_detection(self, img: Image.Image, v_conf: float) -> list[tuple[str, BoundingBox]]:
         require(img is not None, "_run_detection called with no image")
+        model = self.get_model()
         with self._lock:
-            res = next(iter(self.get_model()(img, imgsz=constants.DEFAULT_YOLO_IMGSZ, agnostic_nms=constants.YOLO_AGNOSTIC_NMS, verbose=False)))
+            res = next(iter(model(img, imgsz=constants.DEFAULT_YOLO_IMGSZ, agnostic_nms=constants.YOLO_AGNOSTIC_NMS, verbose=False)))
         boxes = getattr(res, "boxes", None)
         if boxes is None or len(boxes) == 0 or not hasattr(boxes, "cls"):
             return []
