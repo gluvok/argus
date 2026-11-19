@@ -60,6 +60,18 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Continuous Verification Loop & Pre-Push Requirement
+
+**Iterate until clean. Never push broken code.**
+
+Before completing any task, committing, or pushing code:
+1. Run the verification commands repeatedly until all pass with 0 errors and 0 warnings:
+   - `uv run ruff check --fix`
+   - `uv run ty check`
+   - `uv run pytest`
+2. If any step fails, fix the root cause and restart the verification loop from step 1.
+3. Never bypass or silence warnings without explicit justification and approval.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
