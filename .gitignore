@@ -207,3 +207,7 @@ debug_crops/
 :memory:.ses
 *.ses
 yolo26n.onnx
+
+# Scratch plans and audit documents
+docs/plans/
+docs/analysis/
