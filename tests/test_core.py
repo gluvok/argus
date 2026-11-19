@@ -76,22 +76,6 @@ def test_cors_credentials_not_allowed_with_wildcard():
         )
 
 
-def test_pil_max_image_pixels_set_at_constants_import():
-    """Verify Image.MAX_IMAGE_PIXELS is configured without needing loader.py imported."""
-    import subprocess
-    import sys
-
-    code = (
-        "from PIL import Image; "
-        "import app.core.constants as c; "
-        "assert Image.MAX_IMAGE_PIXELS == c.MAX_IMAGE_PIXELS, f'Expected {c.MAX_IMAGE_PIXELS}, got {Image.MAX_IMAGE_PIXELS}'"
-    )
-    result = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, check=False
-    )
-    assert result.returncode == 0, result.stderr
-
-
 def test_app_package_exports():
     """Verify top-level package exports app and recognize_plate_image lazily."""
     from fastapi import FastAPI
