@@ -27,9 +27,7 @@ class VehicleDetector:
         if cls._model is None:
             with cls._lock:
                 if cls._model is None:
-                    import app.services.detector as yf
-
-                    cls._model = yf.YOLO(constants.YOLO_MODEL_NAME)
+                    cls._model = YOLO(constants.YOLO_MODEL_NAME)
         ensure(cls._model is not None, "YOLO model failed to initialise")
         return cls._model
 
@@ -38,14 +36,16 @@ class VehicleDetector:
         """Pre-warm detector with dummy input to force backend graph compilation."""
         try:
             dummy = make_dummy_frame(constants.DEFAULT_YOLO_IMGSZ, constants.DEFAULT_YOLO_IMGSZ)
-            cls.get_model()(dummy, imgsz=constants.DEFAULT_YOLO_IMGSZ, verbose=False)
+            with cls._lock:
+                cls.get_model()(dummy, imgsz=constants.DEFAULT_YOLO_IMGSZ, verbose=False)
             return True
         except (RuntimeError, ValueError, OSError, AttributeError, ImportError):
             return False
 
     def _run_detection(self, img: Image.Image, v_conf: float) -> list[tuple[str, BoundingBox]]:
         require(img is not None, "_run_detection called with no image")
-        res = next(iter(self.get_model()(img, imgsz=constants.DEFAULT_YOLO_IMGSZ, agnostic_nms=constants.YOLO_AGNOSTIC_NMS, verbose=False)))
+        with self._lock:
+            res = next(iter(self.get_model()(img, imgsz=constants.DEFAULT_YOLO_IMGSZ, agnostic_nms=constants.YOLO_AGNOSTIC_NMS, verbose=False)))
         boxes = getattr(res, "boxes", None)
         if boxes is None or len(boxes) == 0 or not hasattr(boxes, "cls"):
             return []
@@ -57,5 +57,4 @@ class VehicleDetector:
     def detect(self, image_input: ImageInput) -> DetectionResult:
         pil_img = load_rgb(image_input)
         vehicles = self._run_detection(pil_img, constants.VEHICLE_CONF_THRESH)
-        detected = [DetectedVehicle(vt, b, pil_img.crop(b), b) for vt, b in vehicles]
-        return DetectionResult(vehicles=detected)
+        return DetectionResult(vehicles=[DetectedVehicle(vt, b, pil_img.crop(b), b) for vt, b in vehicles])

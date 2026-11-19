@@ -60,7 +60,9 @@ jobs:
           RELEASE_DIR=$(mktemp -d)
           cp compiled_dist/app.*.so "${RELEASE_DIR}/"
           cp pyproject.toml uv.lock README.md .python-version "${RELEASE_DIR}/"
+          [ -d yolo26n_openvino_model ] && cp -r yolo26n_openvino_model "${RELEASE_DIR}/"
           [ -f yolo26n.onnx ] && cp yolo26n.onnx "${RELEASE_DIR}/"
+          [ -d scripts ] && cp -r scripts "${RELEASE_DIR}/"
 
           # Switch to orphan deployment branch and wipe tracked and untracked files
           git branch -D release 2>/dev/null || true
