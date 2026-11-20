@@ -18,7 +18,7 @@ class VehicleDetector:
     """Stage 1: YOLO26 Vehicle Detection."""
 
     _model: YOLO | None = None
-    _lock = threading.RLock()
+    _lock = threading.Lock()
     _clamp_box = staticmethod(clamp_box)
     _parse_detections = staticmethod(parse_detections)
 

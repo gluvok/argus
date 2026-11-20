@@ -3,10 +3,25 @@
 import threading
 from typing import Any
 
+import numpy as np
+from fast_alpr.base import BaseDetector
+
 from app.core.logging import logger
 
 _alpr_instance: Any = None
 _lock = threading.Lock()
+
+
+class _FastAlprDetector(BaseDetector):
+    """Detector adapter using open_image_models.create_detector to avoid deprecation warnings."""
+
+    def __init__(self, model_name: str, conf_thresh: float, providers: list[str]) -> None:
+        from open_image_models import create_detector
+
+        self.detector = create_detector(model_name, conf_thresh=conf_thresh, providers=providers)
+
+    def predict(self, frame: np.ndarray) -> list[Any]:
+        return self.detector.predict(frame)
 
 
 def _resolve_onnx_providers() -> list[str]:
@@ -26,10 +41,13 @@ def get_fast_alpr_engine() -> Any:
 
                 logger.info("Initializing Fast-ALPR ONNX models...")
                 providers = _resolve_onnx_providers()
+                detector = _FastAlprDetector(
+                    "yolo-v9-s-608-license-plate-end2end",
+                    conf_thresh=0.25,
+                    providers=providers,
+                )
                 _alpr_instance = ALPR(
-                    detector_model="yolo-v9-s-608-license-plate-end2end",
-                    detector_conf_thresh=0.25,
-                    detector_providers=providers,
+                    detector=detector,
                     ocr_model="cct-xs-v2-global-model",
                     ocr_providers=providers,
                 )

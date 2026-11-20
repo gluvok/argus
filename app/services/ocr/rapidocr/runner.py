@@ -11,7 +11,7 @@ from app.schemas import OCRToken
 from app.services.ocr.rapidocr.engine import get_rapidocr_engine
 from app.services.ocr.spatial.geometry import get_box_geometry
 
-_rapid_lock = threading.RLock()
+_rapid_lock = threading.Lock()
 
 
 def run_rapidocr_inference(img_pil: Image.Image, engine_getter: Any = None) -> list[OCRToken]:
