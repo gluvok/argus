@@ -4,8 +4,7 @@ import io
 
 from PIL import Image
 
-from app.core.constants import MAX_UPLOAD_BYTES
-from app.core.exceptions import InvalidImageError, PayloadTooLargeError
+from app.core.exceptions import InvalidImageError
 from app.services.image_processing.constants import (
     ALLOWED_IMAGE_FORMATS,
     ALLOWED_IMAGE_MIME_TYPES,
@@ -17,10 +16,6 @@ def probe_image(image_bytes: bytes) -> tuple[str, int, int]:
     if not image_bytes:
         raise InvalidImageError("Uploaded image file is empty.")
 
-    if len(image_bytes) > MAX_UPLOAD_BYTES:
-        limit_mb = MAX_UPLOAD_BYTES // (1024 * 1024)
-        raise PayloadTooLargeError(f"Image exceeds maximum permitted size of {limit_mb} MB.")
-
     try:
         with io.BytesIO(image_bytes) as buf, Image.open(buf) as probe:
             fmt = probe.format
@@ -31,7 +26,7 @@ def probe_image(image_bytes: bytes) -> tuple[str, int, int]:
                 )
             return fmt.upper(), probe.width, probe.height
     except Image.DecompressionBombError as exc:
-        raise PayloadTooLargeError(f"Image dimensions exceed permitted budget: {exc}") from exc
+        raise InvalidImageError(f"Image dimensions exceed permitted budget: {exc}") from exc
     except InvalidImageError:
         raise
     except Exception as exc:

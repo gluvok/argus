@@ -63,7 +63,7 @@ Crop scans stop at the first vehicle that yields a plate unless `ENABLE_MULTI_VE
 
 - **Model singletons are lazy, double-checked-locked class/module globals** (`VehicleDetector._model`, `_alpr_instance`, `_rapidocr_instance`). YOLO and RapidOCR inference also run under a `threading.Lock`; Fast-ALPR inference is unlocked. Concurrency is bounded only by the semaphore — don't remove it.
 - **Patch points for tests:** the orchestrator resolves `pl.VehicleDetector` / `pl.PlateRecognizer` through `app.services.pipeline` at call time, and `VehicleDetector.get_model` goes through `app.services.detector.YOLO`. Mock there, not at the defining module.
-- **Errors:** raise `InvalidImageError` (400) / `PayloadTooLargeError` (413) / `ANPRServiceError` (500) from services; use `require`/`ensure` for invariants (→ 500 `ContractViolation`). RapidOCR tiers swallow engine errors and fall through; Fast-ALPR tiers do **not** — an exception there becomes a 500.
+- **Errors:** raise `InvalidImageError` (400) / `ANPRServiceError` (500) from services; use `require`/`ensure` for invariants (→ 500 `ContractViolation`). RapidOCR tiers swallow engine errors and fall through; Fast-ALPR tiers do **not** — an exception there becomes a 500.
 - **Warm-up failures are non-fatal** (`app/core/lifespan.py`): the server starts and `/health` still says `healthy` even if a model failed to load. `/health` is static.
 - **No-plate is success:** `200` with `"results": []`.
 - `constants.VERSION` reports `"dev"` at runtime: there's no `[build-system]`, so `uv sync` never installs `argus` as a distribution for `importlib.metadata` to find.

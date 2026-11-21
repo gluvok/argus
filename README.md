@@ -89,7 +89,6 @@ Errors use one JSON shape: `success`, `status_code`, `message`, `error_type`, `d
 | Status | `error_type` | Cause |
 |---|---|---|
 | 400 | `InvalidImageError` | wrong content type, empty file, unsupported or corrupt image |
-| 413 | `PayloadTooLargeError` | over 8 MB or 50 megapixels |
 | 422 | `RequestValidationError` | missing `file` field |
 | 500 | `InternalServerError` / `ContractViolation` | engine or internal failure |
 

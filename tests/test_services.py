@@ -182,7 +182,7 @@ def test_inspect_image_unsupported_format_and_bomb():
 
     from PIL import Image
 
-    from app.core.exceptions import InvalidImageError, PayloadTooLargeError
+    from app.core.exceptions import InvalidImageError
     from app.services.image_processing import probe_image
 
     # Create GIF in memory
@@ -194,7 +194,7 @@ def test_inspect_image_unsupported_format_and_bomb():
     # DecompressionBombError handling
     with (
         patch("PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb detected")),
-        pytest.raises(PayloadTooLargeError, match="Image dimensions exceed permitted budget"),
+        pytest.raises(InvalidImageError, match="Image dimensions exceed permitted budget"),
     ):
         probe_image(b"dummy")
 
@@ -206,7 +206,7 @@ def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
     import numpy as np
     from PIL import Image
 
-    from app.core.exceptions import InvalidImageError, PayloadTooLargeError
+    from app.core.exceptions import InvalidImageError
     from app.services.image_processing import load_rgb
 
     # 1. 2D grayscale array
@@ -228,7 +228,7 @@ def test_load_rgb_grayscale_and_file_paths(tmp_path, sample_image_bytes):
     # 4. DecompressionBombError via file path
     with (
         patch("PIL.Image.open", side_effect=Image.DecompressionBombError("Bomb")),
-        pytest.raises(PayloadTooLargeError, match="Image dimensions exceed permitted budget"),
+        pytest.raises(InvalidImageError, match="Image dimensions exceed permitted budget"),
     ):
         load_rgb(str(file_path))
 

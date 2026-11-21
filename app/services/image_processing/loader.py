@@ -6,12 +6,10 @@ import cv2
 import numpy as np
 from PIL import Image, ImageFile, ImageOps
 
-from app.core.constants import MAX_IMAGE_PIXELS
-from app.core.exceptions import InvalidImageError, PayloadTooLargeError
+from app.core.exceptions import InvalidImageError
 
 type ImageInput = str | bytes | Image.Image | np.ndarray
 
-Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 object.__setattr__(ImageFile, "LOAD_TRUNCATED_IMAGES", True)
 
 
@@ -38,7 +36,7 @@ def load_rgb(image_input: ImageInput) -> Image.Image:
             img.load()
             return ImageOps.exif_transpose(img).convert("RGB")
     except Image.DecompressionBombError as exc:
-        raise PayloadTooLargeError(f"Image dimensions exceed permitted budget: {exc}") from exc
+        raise InvalidImageError(f"Image dimensions exceed permitted budget: {exc}") from exc
     except Exception as exc:
         raise InvalidImageError(f"Could not decode uploaded image: {exc}") from exc
 

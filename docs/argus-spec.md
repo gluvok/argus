@@ -21,7 +21,7 @@ Source: `app/api/routes/recognition.py`.
 
 | Field | Type | Constraint |
 |---|---|---|
-| `file` | file part | bytes ≤ `MAX_UPLOAD_BYTES` = 8 MiB (8 × 1024 × 1024); decoded pixels ≤ `MAX_IMAGE_PIXELS` = 50 000 000; format sniffed by Pillow ∈ {`JPEG`, `PNG`, `WEBP`, `BMP`} |
+| `file` | file part | Non-empty byte stream; format sniffed by Pillow ∈ {`JPEG`, `PNG`, `WEBP`, `BMP`} |
 
 Part `Content-Type` (parameters after `;` ignored) must be one of `image/jpeg`, `image/jpg`, `image/pjpeg`, `image/png`, `image/x-png`, `image/webp`, `image/bmp`, `image/x-ms-bmp`, **or** `application/octet-stream` (accepted so raw-byte clients work). Missing content type is also accepted. The authoritative check is the byte sniff, not the header.
 
@@ -79,9 +79,9 @@ Source: `app/api/errors.py`, `app/core/exceptions.py`. Every Argus-handled error
 ```json
 {
   "success": false,
-  "status_code": 413,
-  "message": "Image exceeds maximum permitted size of 8 MB.",
-  "error_type": "PayloadTooLargeError",
+  "status_code": 400,
+  "message": "Uploaded image file is empty.",
+  "error_type": "InvalidImageError",
   "details": null,
   "timestamp": "2026-11-21T10:00:00.000000Z"
 }
@@ -89,17 +89,16 @@ Source: `app/api/errors.py`, `app/core/exceptions.py`. Every Argus-handled error
 
 | HTTP | `error_type` | Raised when | Retry? |
 |---|---|---|---|
-| 400 | `InvalidImageError` | disallowed `Content-Type`; empty body; Pillow format not JPEG/PNG/WEBP/BMP; bytes not decodable | No — fix input |
-| 413 | `PayloadTooLargeError` | bytes > 8 MiB; width × height > 50 MP; Pillow `DecompressionBombError` | No — downscale/re-encode |
+| 400 | `InvalidImageError` | disallowed `Content-Type`; empty body; Pillow format not JPEG/PNG/WEBP/BMP; bytes not decodable; Pillow `DecompressionBombError` | No — fix input |
 | 422 | `RequestValidationError` | `file` part missing / malformed multipart; `details` = FastAPI `exc.errors()` list | No |
 | 500 | `ContractViolation` | internal `require`/`ensure` invariant failed; `details` = violation message string | Maybe once |
 | 500 | `InternalServerError` | any other unhandled exception — notably **a Fast-ALPR failure in tier 1 or 2** (those tiers have no try/except, so the cascade aborts instead of falling back to RapidOCR) | Yes, with backoff |
 | 500 | `ANPRServiceError` | base domain error (not raised directly today) | Yes |
 | 404 / 405 | — | unknown route / wrong method: Starlette default body `{"detail": "..."}`, **not** `APIErrorResponse` | No |
 
-Validation order for `/recognize`: content-type → empty → byte size → format sniff (all before the semaphore) → pixel budget → full decode (inside the worker). So an oversized wrong-type upload gets 400, not 413.
+Validation order for `/recognize`: content-type → empty → format sniff (all before the semaphore) → full decode (inside the worker).
 
-The whole body is read into memory before the 8 MiB check; there is no streaming cap at the HTTP layer.
+The whole body is read into memory; there is no streaming cap at the HTTP layer.
 
 ---
 
@@ -124,10 +123,10 @@ sequenceDiagram
     C->>MW: multipart file
     MW->>R: request
     R->>V: validate_image_upload(bytes, content_type)
-    V-->>R: 400 / 413 on failure
+    V-->>R: 400 on failure
     R->>S: acquire
     R->>O: asyncify(recognize_plate_image) (worker thread)
-    O->>V: decode_image → RGB PIL (EXIF-transposed, ≤50 MP)
+    O->>V: decode_image → RGB PIL (EXIF-transposed)
     O->>D: detect(img) conf≥0.35, imgsz 640
     D-->>O: vehicles sorted by box area desc
     alt vehicles found
@@ -199,7 +198,7 @@ Not supported: BH-series (`22BH1234AA`), temporary/trade, diplomatic, and non-In
 
 ### 3.5 State per request
 
-`received → validated (or 400/413) → queued on semaphore → decoding (or 400/413) → detected(n vehicles) → T1 → [T2] → [T3] → [T4] → responded`, where each bracketed tier runs only if every earlier tier yielded nothing. There is no request-to-request state: no DB, no result cache, no cross-frame tracking. The same image always takes the same path.
+`received → validated (or 400) → queued on semaphore → decoding (or 400) → detected(n vehicles) → T1 → [T2] → [T3] → [T4] → responded`, where each bracketed tier runs only if every earlier tier yielded nothing. There is no request-to-request state: no DB, no result cache, no cross-frame tracking. The same image always takes the same path.
 
 ---
 
@@ -249,7 +248,7 @@ Operations (standard systemd, not wrapped by Argus): `systemctl status argus`, `
 1. Call `http://127.0.0.1:8000/recognize` from the same host; Argus is unreachable off-box by design.
 2. Send one JPEG < 8 MiB as multipart field `file` with `Content-Type: image/jpeg` (or `application/octet-stream`).
 3. Treat `200` + `results: []` as "no plate read" — a business outcome, not a failure. Use `results[0].plate` as the primary read.
-4. Retry only on 5xx (and connection errors while systemd restarts the unit, ~5 s). Never retry 400/413/422.
+4. Retry only on 5xx (and connection errors while systemd restarts the unit, ~5 s). Never retry 400/422.
 5. Branch on `error_type`, not on `message` text.
 6. Don't rely on `/health` for model readiness.
 7. Any change to `PlateResult` / `RecognitionResponse` in `app/schemas.py` is a breaking contract change — update this spec and both consumers together.

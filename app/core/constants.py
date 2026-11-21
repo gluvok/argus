@@ -33,10 +33,6 @@ VEHICLE_IOU_THRESH = 0.50
 MAX_CONCURRENT_INFERENCES = 4
 OPENVINO_NUM_THREADS = 4
 
-# Image Payload & Security Limits
-MAX_UPLOAD_BYTES = 8 * 1024 * 1024
-MAX_IMAGE_PIXELS = 50_000_000
-
 # Ensure Ultralytics and OpenVINO caches/telemetry are safely isolated
 _yolo_dir = os.path.abspath(YOLO_CONFIG_DIR)
 os.makedirs(_yolo_dir, exist_ok=True)

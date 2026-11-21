@@ -1,5 +1,4 @@
 import os
-from unittest.mock import patch
 
 from app.schemas import RecognitionResponse
 
@@ -23,20 +22,6 @@ def test_recognize_invalid_image_bytes(client):
     assert response.status_code == 400
     data = response.json()
     assert data["success"] is False
-
-
-def test_recognize_payload_too_large(client):
-    # Simulate a file larger than MAX_UPLOAD_BYTES
-    with patch("app.services.image_processing.security.MAX_UPLOAD_BYTES", 100):
-        large_bytes = b"X" * 200
-        response = client.post(
-            "/recognize",
-            files={"file": ("large.jpg", large_bytes, "image/jpeg")},
-        )
-        assert response.status_code == 413
-        data = response.json()
-        assert data["success"] is False
-        assert "exceeds" in data["message"].lower()
 
 
 def test_recognize_sample_image(client, sample_image_bytes):
