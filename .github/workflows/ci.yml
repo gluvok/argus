@@ -26,13 +26,13 @@ jobs:
           enable-cache: true
 
       - name: Install Dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Lint with Ruff
-        run: uv run ruff check
+        run: uv run --locked ruff check
 
       - name: Type Check with Ty
-        run: uv run ty check
+        run: uv run --locked ty check
 
       - name: Run Pytest Suite
-        run: uv run pytest
+        run: uv run --locked pytest

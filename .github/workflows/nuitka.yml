@@ -36,11 +36,11 @@ jobs:
           enable-cache: false
 
       - name: Install Dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Run Nuitka Build (Application Code Only)
         run: |
-          uv run python -m nuitka \
+          uv run --locked python -m nuitka \
             --module \
             --include-package=app \
             --nofollow-imports \

@@ -21,7 +21,7 @@ def test_deploy_command_templates():
     assert "curl -LsSf https://astral.sh/uv/install.sh" in prep
 
     compile_cmd = build_compile_cmd("/opt/test", 8080)
-    assert "cd /opt/test && uv sync" in compile_cmd
+    assert "cd /opt/test && uv sync --locked && uv run --locked" in compile_cmd
     assert "--port 8080" in compile_cmd
     assert "rm -rf /opt/test/app" in compile_cmd
 
