@@ -26,7 +26,7 @@ Every candidate is normalised and validated against Indian registration rules (s
 
 ## Local development
 
-**Prerequisites:** [uv](https://docs.astral.sh/uv/) and Python 3.14 (`.python-version`). On first run, Fast-ALPR downloads its plate models to `~/.cache/open-image-models/` and `~/.cache/fast-plate-ocr/`, so you need internet once.
+**Prerequisites:** [uv](https://docs.astral.sh/uv/) and Python 3.14 with the GIL (`.python-version` = `3.14+gil`; free-threaded 3.14t is not supported). On first run, Fast-ALPR downloads its plate models to `~/.cache/open-image-models/` and `~/.cache/fast-plate-ocr/`, so you need internet once.
 
 ```bash
 uv sync                                  # install runtime + dev dependencies
