@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+env:
+  # Use uv's standalone 3.14+gil (ships Python.h), not the runner's system python3.14.
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
   build-and-deploy:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}

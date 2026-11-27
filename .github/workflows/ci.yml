@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  # Use uv's standalone 3.14+gil (ships Python.h), not the runner's system python3.14.
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
   validate:
     name: Lint, Type Check & Test
