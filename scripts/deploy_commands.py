@@ -22,8 +22,8 @@ def build_prep_cmd(target: str = TARGET) -> str:
 def build_compile_cmd(target: str = TARGET, port: int = PORT) -> str:
     """Remote command to compile app via Nuitka, write run.sh, and purge source .py files."""
     return (
-        f'set -e; export PATH="$HOME/.local/bin:$PATH"; cd {target} && uv sync && '
-        f"uv run python -m nuitka --module --include-package=app --nofollow-imports "
+        f'set -e; export PATH="$HOME/.local/bin:$PATH"; cd {target} && uv sync --locked && '
+        f"uv run --locked python -m nuitka --module --include-package=app --nofollow-imports "
         f"--remove-output --lto=yes --python-flag=no_docstrings --output-dir={target}/dist app && "
         f"mv -f {target}/dist/app*so {target}/ && "
         f"printf '#!/usr/bin/env bash\\nset -e\\ncd {target}\\nexec {target}/.venv/bin/fastapi run --host 127.0.0.1 --port {port}\\n' > {target}/run.sh && "

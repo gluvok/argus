@@ -1,5 +1,6 @@
 """Unit tests for deployment command generation and dry-run pipeline."""
 
+import sysconfig
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +21,7 @@ def test_deploy_command_templates():
     assert "curl -LsSf https://astral.sh/uv/install.sh" in prep
 
     compile_cmd = build_compile_cmd("/opt/test", 8080)
-    assert "cd /opt/test && uv sync" in compile_cmd
+    assert "cd /opt/test && uv sync --locked && uv run --locked" in compile_cmd
     assert "--port 8080" in compile_cmd
     assert "rm -rf /opt/test/app" in compile_cmd
 
@@ -49,3 +50,8 @@ def test_run_cmd_failure(mock_subproc):
     mock_subproc.return_value.returncode = 1
     with pytest.raises(SystemExit):
         run_cmd(["false"], dry_run=False)
+
+
+def test_interpreter_is_gil_build():
+    """cv2 and openvino have no working free-threaded build; .python-version pins 3.14+gil."""
+    assert not sysconfig.get_config_var("Py_GIL_DISABLED")

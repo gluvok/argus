@@ -2,10 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, migration ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, migration ]
   workflow_dispatch:
+
+env:
+  # Use uv's standalone 3.14+gil (ships Python.h), not the runner's system python3.14.
+  UV_PYTHON_PREFERENCE: only-managed
 
 jobs:
   validate:
@@ -21,19 +25,14 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Setup Python Runtime
-        uses: actions/setup-python@v7.1.0
-        with:
-          python-version-file: ".python-version"
-
       - name: Install Dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Lint with Ruff
-        run: uv run ruff check
+        run: uv run --locked ruff check
 
       - name: Type Check with Ty
-        run: uv run ty check
+        run: uv run --locked ty check
 
       - name: Run Pytest Suite
-        run: uv run pytest
+        run: uv run --locked pytest
