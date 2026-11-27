@@ -17,6 +17,8 @@ dependencies = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "rapidocr>=3.9.2",
+    "torch>=2.15.0",
+    "torchvision>=0.29.2",
     "ultralytics>=8.4.106",
 ]
 
@@ -31,6 +33,16 @@ dev = [
     "ruff>=0.16.4",
     "ty>=0.0.74",
 ]
+
+# CPU-only target (Pi 5 / arm64 CI): keep torch's CUDA wheels off Linux.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 
 [tool.fastapi]
 entrypoint = "app.server:app"
