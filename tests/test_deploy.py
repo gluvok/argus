@@ -1,5 +1,6 @@
 """Unit tests for deployment command generation and dry-run pipeline."""
 
+import sysconfig
 from unittest.mock import patch
 
 import pytest
@@ -49,3 +50,8 @@ def test_run_cmd_failure(mock_subproc):
     mock_subproc.return_value.returncode = 1
     with pytest.raises(SystemExit):
         run_cmd(["false"], dry_run=False)
+
+
+def test_interpreter_is_gil_build():
+    """cv2 and openvino have no working free-threaded build; .python-version pins 3.14+gil."""
+    assert not sysconfig.get_config_var("Py_GIL_DISABLED")
