@@ -6,7 +6,7 @@ ANPR (Indian number plate) microservice for weighbridge gatekeeping. One FastAPI
 
 | Concern | Choice | Where |
 |---|---|---|
-| Runtime | Python `>=3.14` (`.python-version` = `3.14`), `uv` | `pyproject.toml`, `uv.lock` |
+| Runtime | Python `>=3.14` (`.python-version` = `3.14+gil`: uv would otherwise pick a managed 3.14t, which cv2/openvino can't run on), `uv` | `pyproject.toml`, `uv.lock` |
 | HTTP | `fastapi[standard]`; entrypoint `app.server:app` via `[tool.fastapi]` | `app/server.py` |
 | Vehicle detector | `ultralytics` YOLO26n, OpenVINO IR export, COCO classes | `yolo26n_openvino_model/` (git-tracked) |
 | Plate engine (primary) | `fast-alpr[onnx]` on `onnxruntime`: `yolo-v9-s-608-license-plate-end2end` + `cct-xs-v2-global-model` | `app/services/ocr/fast_alpr/` |
