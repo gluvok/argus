@@ -54,3 +54,9 @@ exclude_also = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+
+[tool.uv]
+# ultralytics depends on the GUI build `opencv-python`, which needs libGL and
+# clashes with `opencv-python-headless` over the same `cv2` package. Drop it so
+# only the headless build is installed.
+exclude-dependencies = ["opencv-python"]
